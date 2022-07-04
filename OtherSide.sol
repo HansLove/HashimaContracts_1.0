@@ -23,13 +23,17 @@ contract OtherSide is ERC20Burnable{
     event ExchangeComplete(uint256 amount,bool free,bytes32 result_hash);
 
 
-    function deposit(uint256 amount) public{
+    function deposit(uint256 amount) public 
+    // returns(bool,bytes32)
+    {
         (bool free,bytes32 result_hash)=coldProofOfWork();
-        if(!free)hashiContract.burnFrom(msg.sender, amount);
-
+        
         uint256 amounToMint=amount*current_rate;
         _mint(msg.sender,amounToMint);
         emit ExchangeComplete(amounToMint,free,result_hash);
+        if(!free)hashiContract.burnFrom(msg.sender, amount);
+
+     
 
    }
 

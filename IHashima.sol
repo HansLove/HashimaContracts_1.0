@@ -4,26 +4,53 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 
 
-
 interface IHashima is IERC721{
 
+    struct Hashi {
+      uint256 tokenId;
+      string data;
+      address payable currentOwner;
+      address payable previousOwner;
+      uint256 stars;
+      uint256 blockTolerance;
+      string nonce;
+      uint256 price;
+      bool forSale;
+    }
+  
+    //Events
+    event GameStart(uint256 _blocknumber);
 
-    // function Init()external;
+    event Minted(bool respuesta,bytes32 hashResultado,uint256 id);
 
-    function Mint(uint256 _stars,string memory _data,string memory _nonce,
-    string memory _uri,
-    uint256 _price,
-    bool _forSale)external;
+    //Getters
 
-    // function getBlockTolerance()external returns(uint256);
+    //Get all the data save in the blockchain. 
+    //You can get the proof of work variables to 'check' the Hashima power
+    function getHashima(uint256 _index)external view returns(Hashi memory);
 
-    // function getStars(uint256 tokenID)external returns(uint256);
+    function getTotal()external view returns(uint256);
+    
+    function getBlockTolerance()external returns(uint256);
 
-    // function getProofOfWorkData(uint256 tokenID)external view returns(string memory,uint256,string memory,uint256,uint256);
+    function checkTolerance()external view returns(uint256);
+
+    function buyToken(uint256 _tokenId)external payable returns(bool);
+
+    /**
+    Called by the user to set a initial 'Tolerance' Number.
+     */
+    function Init()external returns(uint256);
+
+    function Mint(uint256 _stars,string memory _data,string memory _nonce,string memory _uri,uint256 _price,bool _forSale)external;
 
 
-    // function checkingHash(string memory _data,string memory _nonce,
-    // uint256 _tolerance,
-    // uint256 _stars)external pure returns(bool,bytes32);
+    function toggleForSale(uint256 _tokenId) external;
+
+    //This function change the price and the sale state in the same transaction
+    function toggleForSaleAndPrice(uint256 _tokenId, uint256 _newPrice)external;
+
+    //Only changes the price
+    function changePrice(uint256 _tokenId,uint256 _newPrice) external;
 
 }

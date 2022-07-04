@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "./Hashima.sol";
 
-contract Hashi is ERC20{
+contract Hashi is ERC20Burnable{
     mapping(address => mapping(uint256=>uint256)) public checkpoints;
     mapping(uint256 => bool) public has_deposited;
     mapping(uint256 => address) public staking_accounts;
@@ -31,14 +31,15 @@ contract Hashi is ERC20{
         //La altura del bloque de partida
         checkpoints[msg.sender][tokenId] = block.number;
         staking_accounts[tokenId]=msg.sender;
+        has_deposited[tokenId]=true;
         
         hashimaContract.transferFrom(msg.sender, address(this), tokenId);
         bool forSale=hashimaContract.getHashima(tokenId).forSale;
         
         if(forSale){
-            hashimaContract.toggleForSale(tokenId,0);
+            hashimaContract.toggleForSale(tokenId);
         }
-        has_deposited[tokenId]=true;
+        
    }
 
     function withdraw(uint256 tokenId) external{
@@ -66,7 +67,7 @@ contract Hashi is ERC20{
             return 0;
         }
         uint256 _stars=hashimaContract.getHashima(tokenId).stars;
-        uint256 pesoEstrella=_stars*_stars*1000/64-_stars;
+        uint256 pesoEstrella=_stars*_stars*1000**_stars/64-_stars;
         uint256 checkpoint = checkpoints[beneficiary][tokenId];
         return pesoEstrella*(block.number-checkpoint);
     }
