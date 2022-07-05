@@ -72,6 +72,7 @@ import "./IHashima.sol";
           }
       
       }
+      
       if (respuesta) {
           //convierto la string utilizada a true para que no pueda ser utilizada.    
           _names[_data]=true; 
@@ -151,6 +152,8 @@ import "./IHashima.sol";
   function toggleForSaleAndPrice(uint256 _tokenId,uint256 _price) public override{
     require(msg.sender != address(0));
     require(_exists(_tokenId));
+    require(_price>0,'price cannot be 0');
+
     address tokenOwner = ownerOf(_tokenId);
     require(tokenOwner == msg.sender,'only the hashima owner');
     Hashi memory _hashima = _hashis[_tokenId];
@@ -169,6 +172,7 @@ import "./IHashima.sol";
   function changePrice(uint256 _tokenId,uint256 _newPrice) public override {
     require(msg.sender != address(0));
     require(_exists(_tokenId));
+    require(_newPrice>0,'price cannot be 0');
     address tokenOwner = ownerOf(_tokenId);
     require(tokenOwner == msg.sender,'only the hashima owner');
     Hashi memory _hashima = _hashis[_tokenId];
@@ -190,14 +194,15 @@ import "./IHashima.sol";
     Hashi memory _hashima = _hashis[_tokenId];
     
     require(msg.value >= _hashima.price,'price has to be high');
-    require(_hashima.forSale);
+    require(_hashima.forSale,'hashima is not in sale');
     
-    _transfer(tokenOwner, msg.sender, _tokenId);
     // get owner of the token
     address payable sendTo = _hashima.currentOwner;
     // send token's worth of ethers to the owner
     (bool sent, ) = sendTo.call{value: msg.value}("");
+    require(sent,'transaction not succesful');
 
+    _transfer(tokenOwner, msg.sender, _tokenId);
     // update the token's previous owner
     _hashima.previousOwner = _hashima.currentOwner;
     // update the token's current owner
