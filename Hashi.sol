@@ -3,15 +3,15 @@ pragma solidity ^0.8.0;
 
 import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./Hashima.sol";
+import "./ERC721Hashima.sol";
 
 contract Hashi is ERC20Burnable{
+    using SafeMath for uint256;
     mapping(address => mapping(uint256=>uint256)) public checkpoints;
     mapping(uint256 => bool) public has_deposited;
     mapping(uint256 => address) public staking_accounts;
-
-
-    uint public REWARD_PER_BLOCK = 1;
 
     Hashima private hashimaContract;
 

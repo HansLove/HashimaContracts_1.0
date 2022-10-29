@@ -3,15 +3,14 @@ pragma solidity ^0.8.0;
 
 import "./IHashima.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 
-contract Server is Ownable{
+contract Server is Ownable,ReentrancyGuard{
 
     mapping(address=>Payment) debt;
-    // mapping(address=>mapping(uint256=>bool)) hashimaBalance;
-
+    uint256 private STARS_LIMIT=2;
     IHashima hashimaContract;
-    address oficialServer;
     
     constructor(IHashima hashima_contract){
         hashimaContract=hashima_contract;
@@ -20,37 +19,35 @@ contract Server is Ownable{
 
     struct Payment{
         uint256 stars;
-        string URI;
         bool paid;
     }
 
-    //Modificador
-    modifier onlyServer(){
-        require(msg.sender==oficialServer,'only server');
-        _;
-    }
-    address [] ACCEPTED_COINS;  
-    uint256 minPrice=0.0001 ether;
 
-    function setServer(address _serv)public onlyOwner{
-        oficialServer=_serv;
-    }
 
-    function payServer(uint256 _stars,string calldata _uri)external payable{
+    uint256 minPrice=0.1 ether;
+
+
+    function payServer(uint256 _stars)external payable{
         require(msg.value>=minPrice,'min price no reach');
-        require(_stars<5,'no more than 4 stars');
+        require(_stars<STARS_LIMIT,'stars limit reach');
 
         Payment memory paymentInput=Payment(
             _stars,
-            _uri,
             true
-
         );
+
         debt[msg.sender]=paymentInput;
     }
 
+    //Esta funciona la llama el servidor para ver si el usuario pago su Hashima
+    //devuelve si pago y cuantas estrellas junto con la URI
+    function checkPayment(address _user)public view returns(bool,uint256){
+        return (debt[_user].paid,debt[_user].stars);
+    }
+
+
     //cuando el servidor tenga listo el hashima lo deposita
-    function depositHashima(uint256 tokenId,address clientUser)external{
+    function depositHashima(uint256 tokenId,address clientUser)external nonReentrant{
         require(debt[clientUser].paid,'user no pay');
         hashimaContract.transferFrom(msg.sender, clientUser, tokenId);
         Payment memory newPay=debt[clientUser];
@@ -58,17 +55,8 @@ contract Server is Ownable{
         debt[clientUser]=newPay;
     }
     
-    //Esta funciona la llama el servidor para ver si el usuario pago su Hashima
-    //devuelve si pago y cuantas estrellas junto con la URI
-    function checkPayment(address _user)public view returns(bool,uint256,string memory){
-        return (debt[_user].paid,debt[_user].stars,debt[_user].URI);
-    }
-
-    function claimHashima(uint256 tokenId)public{
-        require(debt[msg.sender].paid,'debt is false');
-        debt[msg.sender].paid=false;
-        hashimaContract.transferFrom(address(this), msg.sender, tokenId);
-        
+    function paymentRegister(address _user)external view returns(bool){
+        return debt[_user].paid;
     }
 
     //Funcion para que el dueño cambie el precio
@@ -76,6 +64,21 @@ contract Server is Ownable{
         minPrice=_minPrice;
     }
 
+    function getPrice()external view returns(uint256){
+        return minPrice;
+    }
 
+    //Function to change to number of stars accepted by the owner
+    //This number multiplies by 2
+    function setStarsLimit(uint256 _numberStars)public onlyOwner{
+        STARS_LIMIT=_numberStars;
+    }
+
+
+    function withdraw(address _receiver)public onlyOwner{
+        uint256 totalAmount=address(this).balance;
+        (bool sent, ) = _receiver.call{value:totalAmount}("");
+        require(sent,"No cool withdraw");
+    }
 
 }

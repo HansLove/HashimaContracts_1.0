@@ -6,15 +6,15 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./IHashima.sol";
 
 
 /**
- * @dev ERC721 token with hash power inyected.
+  Hashima Protocol
+ * @dev ERC721 token with proof of work inyected in the structure.
  by: Aaron Tolentino
  */
-  abstract contract ERC721Hashima is ERC721URIStorage,IHashima,ReentrancyGuard{
+  abstract contract ERC721Hashima is ERC721URIStorage,IHashima{
 
   using Counters for Counters.Counter;
   using Strings for uint256;
@@ -30,11 +30,10 @@ import "./IHashima.sol";
   mapping(uint256=>Hashi) _hashis ;
 
 
-  function Init()public override returns(uint256){
+  function Init()public override{
         uint256 _block=block.number;
         tolerance[msg.sender]=_block;
         emit GameStart(_block);
-        return _block;
 
   }
 
@@ -55,37 +54,39 @@ import "./IHashima.sol";
     string memory _uri,
     uint256 _price,
     bool _forSale
-    )public nonReentrant override {
-      require(tolerance[msg.sender]+BLOCK_TOLERANCE>block.number,"tolerance is expire");
-      require(_names[_data]==false,"not unique data");
+    )public override {
+      
       require(tolerance[msg.sender]!=0,"Tolerance cannot be 0");
+      require(tolerance[msg.sender]+BLOCK_TOLERANCE>block.number,"Tolerance is expire");
+      require(_names[_data]==false,"Not unique data");
       require(msg.sender != address(0));
-      require(_stars>0,"stars more than 0");
+      require(_stars>0,"At least 2 stars");
+      require(_price>0,"Price cannot be 0");
 
       bool respuesta=true;
       uint256 _id=0;
 
       bytes32 _hashFinal=sha256(abi.encodePacked(_data,_nonce,Strings.toString(tolerance[msg.sender])));
-      for (uint256 index = 0; index < _stars; index++) {
-      if (_hashFinal[index]!=0x00) {
-              respuesta=false;  
-          }
       
+      for (uint256 index = 0; index < _stars; index++) {
+        if (_hashFinal[index]!=0x00) {
+                respuesta=false;  
+            }
+    
       }
       
       if (respuesta) {
-          //convierto la string utilizada a true para que no pueda ser utilizada.    
+          //Convert '_data' string in true inside the mapping.   
           _names[_data]=true; 
 
           _id=createHashimaItem(
-              tolerance[msg.sender],
               _data,
               _nonce,
               _stars,
               _uri,
               _price,
               _forSale
-              );
+            );
       }
       
       emit Minted(respuesta,_hashFinal,_id);
@@ -95,7 +96,6 @@ import "./IHashima.sol";
 
 
   function createHashimaItem(
-    uint256  toleranceBlock,
     string memory _data,
     string memory _nonce,
     uint256 _stars,
@@ -112,12 +112,12 @@ import "./IHashima.sol";
 
 
     Hashi memory newHashima= Hashi(
-    _tokenIds.current(),//token id of hashima
+    newItemId,//token id of hashima
     _data,//string pick by the miner
     payable(msg.sender),
     payable(address(0)),
     _stars,
-    toleranceBlock,
+    tolerance[msg.sender],
     _nonce,
     _price,
     _forSale
@@ -132,11 +132,10 @@ import "./IHashima.sol";
 
 //////////////////----CHANGE MARKET STATE----/////////////////////
 
-  function toggleForSale(uint256 _tokenId) public override{
+  function toggleForSale(uint256 _tokenId) public onlyHashimaOwner(_tokenId) override{
     require(msg.sender != address(0));
     require(_exists(_tokenId));
-    address tokenOwner = ownerOf(_tokenId);
-    require(tokenOwner == msg.sender,'only the hashima owner');
+
     Hashi memory _hashima = _hashis[_tokenId];
 
     // if token's forSale is false make it true and vice versa
@@ -149,13 +148,11 @@ import "./IHashima.sol";
     _hashis[_tokenId] = _hashima;
   }
 
-  function toggleForSaleAndPrice(uint256 _tokenId,uint256 _price) public override{
+  function toggleForSaleAndPrice(uint256 _tokenId,uint256 _price) public onlyHashimaOwner(_tokenId) override{
     require(msg.sender != address(0));
     require(_exists(_tokenId));
     require(_price>0,'price cannot be 0');
 
-    address tokenOwner = ownerOf(_tokenId);
-    require(tokenOwner == msg.sender,'only the hashima owner');
     Hashi memory _hashima = _hashis[_tokenId];
 
     // if token's forSale is false make it true and vice versa
@@ -163,18 +160,20 @@ import "./IHashima.sol";
       _hashima.forSale = false;
     } else {
       _hashima.forSale = true;
-      _hashima.price = _price;
+      
     }
+    //This function main goal is change the price
+    _hashima.price = _price;
+
     // set and update that token in the mapping
     _hashis[_tokenId] = _hashima;
   }
 
-  function changePrice(uint256 _tokenId,uint256 _newPrice) public override {
+  function changePrice(uint256 _tokenId,uint256 _newPrice) public onlyHashimaOwner(_tokenId)  override {
     require(msg.sender != address(0));
     require(_exists(_tokenId));
     require(_newPrice>0,'price cannot be 0');
-    address tokenOwner = ownerOf(_tokenId);
-    require(tokenOwner == msg.sender,'only the hashima owner');
+
     Hashi memory _hashima = _hashis[_tokenId];
 
     _hashima.price = _newPrice;
@@ -203,11 +202,13 @@ import "./IHashima.sol";
     require(sent,'transaction not succesful');
 
     _transfer(tokenOwner, msg.sender, _tokenId);
+
     // update the token's previous owner
     _hashima.previousOwner = _hashima.currentOwner;
     // update the token's current owner
     _hashima.currentOwner =payable(msg.sender);
 
+    //Change market state, so there is no possibility of quick buy
     _hashima.forSale=false;
     // set and update that token in the mapping
     _hashis[_tokenId] = _hashima;
@@ -234,6 +235,12 @@ import "./IHashima.sol";
   }
 
 
+///////////////---Modifiers----------------------------------------------------//////
+  modifier onlyHashimaOwner(uint256 _tokenId){
+    address tokenOwner = ownerOf(_tokenId);
+    require(tokenOwner == msg.sender,'only the hashima owner');
+    _;
+  }
 
-  
+
 }

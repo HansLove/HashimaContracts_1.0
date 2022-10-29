@@ -40,7 +40,7 @@ interface IHashima is IERC721{
     /**
     Called by the user to set a initial 'Tolerance' Number.
      */
-    function Init()external returns(uint256);
+    function Init()external;
 
     function Mint(uint256 _stars,string memory _data,string memory _nonce,string memory _uri,uint256 _price,bool _forSale)external;
 
