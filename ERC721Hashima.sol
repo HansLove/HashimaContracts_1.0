@@ -84,13 +84,60 @@ import "./IHashima.sol";
               _stars,
               _uri,
               _price,
-              _forSale
+              _forSale,
+              msg.sender
             );
       }
       
       emit Minted(respuesta,_hashFinal,_id);
       
 
+  }
+
+  function MintFor(
+    uint256 _stars,
+    string memory _data,
+    string memory _nonce,
+    string memory _uri,
+    uint256 _price,
+    bool _forSale,
+    address _receiver
+    )public{
+      require(tolerance[msg.sender]!=0,"Tolerance cannot be 0");
+      require(tolerance[msg.sender]+BLOCK_TOLERANCE>block.number,"Tolerance is expire");
+      require(_names[_data]==false,"Not unique data");
+      require(msg.sender != address(0));
+      require(_stars>0,"At least 2 stars");
+      require(_price>0,"Price cannot be 0");
+
+      bool respuesta=true;
+      uint256 _id=0;
+
+      bytes32 _hashFinal=sha256(abi.encodePacked(_data,_nonce,Strings.toString(tolerance[msg.sender])));
+      
+      for (uint256 index = 0; index < _stars; index++) {
+        if (_hashFinal[index]!=0x00) {
+                respuesta=false;  
+            }
+    
+      }
+      
+      if (respuesta) {
+          //Convert '_data' string in true inside the mapping.   
+          _names[_data]=true; 
+
+          _id=createHashimaItem(
+              _data,
+              _nonce,
+              _stars,
+              _uri,
+              _price,
+              _forSale,
+              _receiver//Owner of the Hashima
+            );
+      }
+      
+      emit Minted(respuesta,_hashFinal,_id);
   }
 
 
@@ -100,13 +147,14 @@ import "./IHashima.sol";
     uint256 _stars,
     string memory _uri,
     uint256 _price,
-    bool _forSale
+    bool _forSale,
+    address _receiver
     ) internal returns (uint256){
 
     _tokenIds.increment();
     uint256 newItemId = _tokenIds.current();
 
-    _mint(msg.sender, newItemId);
+    _mint(_receiver, newItemId);
     _setTokenURI(newItemId,_uri);
 
 
