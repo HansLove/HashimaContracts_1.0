@@ -55,7 +55,6 @@ import "./IHashima.sol";
     uint256 _price,
     bool _forSale
     )public override {
-      
       require(tolerance[msg.sender]!=0,"Tolerance cannot be 0");
       require(tolerance[msg.sender]+BLOCK_TOLERANCE>block.number,"Tolerance is expire");
       require(_names[_data]==false,"Not unique data");
