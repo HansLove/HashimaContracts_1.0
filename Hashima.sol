@@ -21,6 +21,4 @@ contract Hashima is ERC721Hashima,Ownable{
     function isSigned(uint256 hashimaID)external view returns(bool){
         return SIGNED[hashimaID];
     }
-
-    
 }

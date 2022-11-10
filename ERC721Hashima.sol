@@ -23,17 +23,17 @@ import "./IHashima.sol";
 
   uint256 BLOCK_TOLERANCE=200;
 
-  mapping(address=>uint256) private tolerance;
+  mapping(address=>uint256) internal tolerance;
   //check the string use by the user is not repeat
   mapping(string=>bool)public _names;
 
   mapping(uint256=>Hashi) _hashis ;
 
-
-  function Init()public override{
+  function Init()public override returns(uint256){
         uint256 _block=block.number;
         tolerance[msg.sender]=_block;
         emit GameStart(_block);
+        return _block;
 
   }
 
@@ -53,7 +53,9 @@ import "./IHashima.sol";
     string memory _nonce,
     string memory _uri,
     uint256 _price,
-    bool _forSale
+    bool _forSale,
+    address _receiver,
+    bool forYou
     )public override {
       require(tolerance[msg.sender]!=0,"Tolerance cannot be 0");
       require(tolerance[msg.sender]+BLOCK_TOLERANCE>block.number,"Tolerance is expire");
@@ -84,15 +86,13 @@ import "./IHashima.sol";
               _stars,
               _uri,
               _price,
-              _forSale
+              _forSale,
+              forYou?msg.sender:_receiver
             );
       }
       
       emit Minted(respuesta,_hashFinal,_id);
-      
-
   }
-
 
   function createHashimaItem(
     string memory _data,
@@ -100,20 +100,21 @@ import "./IHashima.sol";
     uint256 _stars,
     string memory _uri,
     uint256 _price,
-    bool _forSale
+    bool _forSale,
+    address _receiver
     ) internal returns (uint256){
 
     _tokenIds.increment();
     uint256 newItemId = _tokenIds.current();
 
-    _mint(msg.sender, newItemId);
+    _mint(_receiver, newItemId);
     _setTokenURI(newItemId,_uri);
 
 
     Hashi memory newHashima= Hashi(
     newItemId,//token id of hashima
     _data,//string pick by the miner
-    payable(msg.sender),
+    payable(_receiver),
     payable(address(0)),
     _stars,
     tolerance[msg.sender],
@@ -240,6 +241,4 @@ import "./IHashima.sol";
     require(tokenOwner == msg.sender,'only the hashima owner');
     _;
   }
-
-
 }

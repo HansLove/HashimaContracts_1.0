@@ -1,64 +1,66 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./IHashima.sol";
+import "./Hashima.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 
 contract Server is Ownable,ReentrancyGuard{
 
-    mapping(address=>Payment) debt;
-    uint256 private STARS_LIMIT=2;
-    IHashima hashimaContract;
+    Hashima hashimaContract;
     
-    constructor(IHashima hashima_contract){
+    constructor(Hashima hashima_contract){
         hashimaContract=hashima_contract;
     
     }
 
-    struct Payment{
-        uint256 stars;
-        bool paid;
-    }
-
-
-
+    mapping(address=>bool) debt;
     uint256 minPrice=0.1 ether;
 
-
-    function payServer(uint256 _stars)external payable{
+    function payServer()external payable{
         require(msg.value>=minPrice,'min price no reach');
-        require(_stars<STARS_LIMIT,'stars limit reach');
 
-        Payment memory paymentInput=Payment(
-            _stars,
-            true
-        );
-
-        debt[msg.sender]=paymentInput;
+        debt[msg.sender]=true;
     }
 
     //Esta funciona la llama el servidor para ver si el usuario pago su Hashima
     //devuelve si pago y cuantas estrellas junto con la URI
-    function checkPayment(address _user)public view returns(bool,uint256){
-        return (debt[_user].paid,debt[_user].stars);
+    function checkPayment(address _user)public view returns(bool){
+        return debt[_user];
     }
 
+    function Init()external returns(uint256){
+        uint256 _blockNumber=hashimaContract.Init();
+        return _blockNumber;
+    }
 
     //cuando el servidor tenga listo el hashima lo deposita
-    function depositHashima(uint256 tokenId,address clientUser)external nonReentrant{
-        require(debt[clientUser].paid,'user no pay');
-        hashimaContract.transferFrom(msg.sender, clientUser, tokenId);
-        Payment memory newPay=debt[clientUser];
-        newPay.paid=false;
-        debt[clientUser]=newPay;
+    function mint(
+        uint256 _stars,
+        string memory _data,
+        string memory _nonce,
+        string memory _uri,
+        uint256 _price,
+        bool _forSale,
+        address _receiver
+        )external nonReentrant{
+
+        require(debt[_receiver],'user no pay');
+
+        hashimaContract.Mint(
+            _stars, 
+            _data,
+            _nonce, 
+            _uri, 
+            _price, 
+            _forSale, 
+            _receiver,
+            false
+        );
+        debt[_receiver]=false;
     }
     
-    function paymentRegister(address _user)external view returns(bool){
-        return debt[_user].paid;
-    }
-
     //Funcion para que el dueño cambie el precio
     function setMinPrice(uint256 _minPrice)public onlyOwner{
         minPrice=_minPrice;
@@ -67,13 +69,6 @@ contract Server is Ownable,ReentrancyGuard{
     function getPrice()external view returns(uint256){
         return minPrice;
     }
-
-    //Function to change to number of stars accepted by the owner
-    //This number multiplies by 2
-    function setStarsLimit(uint256 _numberStars)public onlyOwner{
-        STARS_LIMIT=_numberStars;
-    }
-
 
     function withdraw(address _receiver)public onlyOwner{
         uint256 totalAmount=address(this).balance;
