@@ -23,16 +23,12 @@ interface IHashima is IERC721{
 
     event Minted(bool respuesta,bytes32 hashResultado,uint256 id);
 
-    //Getters
-
     //Get all the data save in the blockchain. 
     //You can get the proof of work variables to 'check' the Hashima power
     function getHashima(uint256 _index)external view returns(Hashi memory);
 
     function getTotal()external view returns(uint256);
     
-    function getBlockTolerance()external returns(uint256);
-
     function checkTolerance()external view returns(uint256);
 
     function buyToken(uint256 _tokenId)external payable returns(bool);
@@ -48,17 +44,14 @@ interface IHashima is IERC721{
       string memory _nonce,
       string memory _uri,
       uint256 _price,
-      bool _forSale,
-      address _receiver,
-      bool forYou
+      bool _forSale
       )external;
 
 
-    function toggleForSale(uint256 _tokenId) external;
+    function toggleForSale(uint256 _tokenId,uint256 _price) external;
 
     //This function change the price and the sale state in the same transaction
-    function toggleForSaleAndPrice(uint256 _tokenId, uint256 _newPrice)external;
-
+    // function toggleForSaleAndPrice(uint256 _tokenId, uint256 _newPrice)external;
     //Only changes the price
     function changePrice(uint256 _tokenId,uint256 _newPrice) external;
 

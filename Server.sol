@@ -48,15 +48,14 @@ contract Server is Ownable,ReentrancyGuard{
 
         require(debt[_receiver],'user no pay');
 
-        hashimaContract.Mint(
+        hashimaContract.MintFor(
             _stars, 
             _data,
             _nonce, 
             _uri, 
             _price, 
             _forSale, 
-            _receiver,
-            false
+            _receiver
         );
         debt[_receiver]=false;
     }

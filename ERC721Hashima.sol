@@ -21,7 +21,7 @@ import "./IHashima.sol";
 
   Counters.Counter internal _tokenIds;
 
-  uint256 BLOCK_TOLERANCE=200;
+  uint256 public BLOCK_TOLERANCE=200;
 
   mapping(address=>uint256) internal tolerance;
   //check the string use by the user is not repeat
@@ -34,7 +34,6 @@ import "./IHashima.sol";
         tolerance[msg.sender]=_block;
         emit GameStart(_block);
         return _block;
-
   }
 
   function _beforeTokenTransfer(address from,address to,uint256 tokenId)internal override{
@@ -47,34 +46,35 @@ import "./IHashima.sol";
 
   }
   
-  function Mint(
-    uint256 _stars,
-    string memory _data,
-    string memory _nonce,
-    string memory _uri,
-    uint256 _price,
-    bool _forSale,
-    address _receiver,
-    bool forYou
-    )public override {
+  modifier onlyHashimaOwner(uint256 _tokenId){
+    address tokenOwner = ownerOf(_tokenId);
+    require(tokenOwner == msg.sender,'only the hashima owner');
+    _;
+  }
+//--------- minting --------------------------------------------------------------------------------
+  modifier checkMintingData(string memory _data,uint256 _stars,uint256 _price){
       require(tolerance[msg.sender]!=0,"Tolerance cannot be 0");
       require(tolerance[msg.sender]+BLOCK_TOLERANCE>block.number,"Tolerance is expire");
       require(_names[_data]==false,"Not unique data");
       require(msg.sender != address(0));
       require(_stars>0,"At least 2 stars");
       require(_price>0,"Price cannot be 0");
+    _;
+  }
+  
+  function Mint(
+    uint256 _stars,
+    string memory _data,
+    string memory _nonce,
+    string memory _uri,
+    uint256 _price,
+    bool _forSale
+    )public checkMintingData(_data,_stars,_price) override {
 
-      bool respuesta=true;
       uint256 _id=0;
 
-      bytes32 _hashFinal=sha256(abi.encodePacked(_data,_nonce,Strings.toString(tolerance[msg.sender])));
-      
-      for (uint256 index = 0; index < _stars; index++) {
-        if (_hashFinal[index]!=0x00) {
-                respuesta=false;  
-            }
-    
-      }
+      (bool respuesta,bytes32 _hashFinal)
+      =proofOfWork(_data,_nonce,_stars);
       
       if (respuesta) {
           //Convert '_data' string in true inside the mapping.   
@@ -87,11 +87,29 @@ import "./IHashima.sol";
               _uri,
               _price,
               _forSale,
-              forYou?msg.sender:_receiver
+              msg.sender
             );
       }
       
       emit Minted(respuesta,_hashFinal,_id);
+  }
+  
+  function proofOfWork(
+    string memory _data,
+    string memory _nonce,
+    uint256 _stars)internal view returns(bool,bytes32){
+      bool respuesta=true;
+      bytes32 _hashFinal=sha256(abi.encodePacked(
+        _data,
+        _nonce,
+        Strings.toString(tolerance[msg.sender])));
+      
+      for (uint256 index = 0; index < _stars; index++) {
+        if (_hashFinal[index]!=0x00) {
+                respuesta=false;  
+            }
+      }
+      return (respuesta,_hashFinal);
   }
 
   function createHashimaItem(
@@ -132,7 +150,7 @@ import "./IHashima.sol";
 
 //////////////////----CHANGE MARKET STATE----/////////////////////
 
-  function toggleForSale(uint256 _tokenId) public onlyHashimaOwner(_tokenId) override{
+  function toggleForSale(uint256 _tokenId,uint256 _price) public onlyHashimaOwner(_tokenId) override{
     require(msg.sender != address(0));
     require(_exists(_tokenId));
 
@@ -144,32 +162,34 @@ import "./IHashima.sol";
     } else {
       _hashima.forSale = true;
     }
+
+    if(_price>0)_hashima.price = _price;
     // set and update that token in the mapping
     _hashis[_tokenId] = _hashima;
   }
 
-  function toggleForSaleAndPrice(uint256 _tokenId,uint256 _price) public onlyHashimaOwner(_tokenId) override{
-    require(msg.sender != address(0));
-    require(_exists(_tokenId));
-    require(_price>0,'price cannot be 0');
+  // function toggleForSaleAndPrice(uint256 _tokenId,uint256 _price) external onlyHashimaOwner(_tokenId) override{
+  //   require(msg.sender != address(0));
+  //   require(_exists(_tokenId));
+  //   require(_price>0,'price cannot be 0');
 
-    Hashi memory _hashima = _hashis[_tokenId];
+  //   Hashi memory _hashima = _hashis[_tokenId];
 
-    // if token's forSale is false make it true and vice versa
-    if(_hashima.forSale) {
-      _hashima.forSale = false;
-    } else {
-      _hashima.forSale = true;
+  //   // if token's forSale is false make it true and vice versa
+  //   if(_hashima.forSale) {
+  //     _hashima.forSale = false;
+  //   } else {
+  //     _hashima.forSale = true;
       
-    }
-    //This function main goal is change the price
-    _hashima.price = _price;
+  //   }
+  //   //This function main goal is change the price
+  //   _hashima.price = _price;
 
-    // set and update that token in the mapping
-    _hashis[_tokenId] = _hashima;
-  }
+  //   // set and update that token in the mapping
+  //   _hashis[_tokenId] = _hashima;
+  // }
 
-  function changePrice(uint256 _tokenId,uint256 _newPrice) public onlyHashimaOwner(_tokenId)  override {
+  function changePrice(uint256 _tokenId,uint256 _newPrice) external onlyHashimaOwner(_tokenId)  override {
     require(msg.sender != address(0));
     require(_exists(_tokenId));
     require(_newPrice>0,'price cannot be 0');
@@ -229,16 +249,5 @@ import "./IHashima.sol";
   function checkTolerance()public view override returns(uint256){
         return tolerance[msg.sender];
   }
-  
-  function getBlockTolerance()external view override returns(uint256){
-        return BLOCK_TOLERANCE;
-  }
 
-
-///////////////---Modifiers----------------------------------------------------//////
-  modifier onlyHashimaOwner(uint256 _tokenId){
-    address tokenOwner = ownerOf(_tokenId);
-    require(tokenOwner == msg.sender,'only the hashima owner');
-    _;
-  }
 }
