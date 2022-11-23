@@ -25,7 +25,7 @@ interface IHashima is IERC721{
 
     //Get all the data save in the blockchain. 
     //You can get the proof of work variables to 'check' the Hashima power
-    function getHashima(uint256 _index)external view returns(Hashi memory);
+    function get(uint256 _index)external view returns(Hashi memory);
 
     function getTotal()external view returns(uint256);
     

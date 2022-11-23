@@ -36,7 +36,7 @@ import "./IHashima.sol";
         return _block;
   }
 
-  function _beforeTokenTransfer(address from,address to,uint256 tokenId)internal override{
+  function _beforeTokenTransfer(address from,address to,uint256 tokenId)internal virtual override{
           Hashi memory _hashima = _hashis[tokenId];
           // update the token's previous owner
           _hashima.previousOwner = payable(from);
@@ -168,27 +168,6 @@ import "./IHashima.sol";
     _hashis[_tokenId] = _hashima;
   }
 
-  // function toggleForSaleAndPrice(uint256 _tokenId,uint256 _price) external onlyHashimaOwner(_tokenId) override{
-  //   require(msg.sender != address(0));
-  //   require(_exists(_tokenId));
-  //   require(_price>0,'price cannot be 0');
-
-  //   Hashi memory _hashima = _hashis[_tokenId];
-
-  //   // if token's forSale is false make it true and vice versa
-  //   if(_hashima.forSale) {
-  //     _hashima.forSale = false;
-  //   } else {
-  //     _hashima.forSale = true;
-      
-  //   }
-  //   //This function main goal is change the price
-  //   _hashima.price = _price;
-
-  //   // set and update that token in the mapping
-  //   _hashis[_tokenId] = _hashima;
-  // }
-
   function changePrice(uint256 _tokenId,uint256 _newPrice) external onlyHashimaOwner(_tokenId)  override {
     require(msg.sender != address(0));
     require(_exists(_tokenId));
@@ -220,25 +199,16 @@ import "./IHashima.sol";
     // send token's worth of ethers to the owner
     (bool sent, ) = sendTo.call{value: msg.value}("");
     require(sent,'transaction not succesful');
-
-    _transfer(tokenOwner, msg.sender, _tokenId);
-
-    // update the token's previous owner
-    _hashima.previousOwner = _hashima.currentOwner;
-    // update the token's current owner
-    _hashima.currentOwner =payable(msg.sender);
-
-    //Change market state, so there is no possibility of quick buy
-    _hashima.forSale=false;
-    // set and update that token in the mapping
+    //Hashima for sale is set to false, no one puede comprar.
+    _hashima.forSale =false;
+    //save in mapping
     _hashis[_tokenId] = _hashima;
-
+    _transfer(tokenOwner, msg.sender, _tokenId);
     return sent;
   }
-
 //////////////////----GETTERS----/////////////////////
 
-  function getHashima(uint256 _index)public view override returns(Hashi memory){
+  function get(uint256 _index)public view override returns(Hashi memory){
         return _hashis[_index];
   }
 

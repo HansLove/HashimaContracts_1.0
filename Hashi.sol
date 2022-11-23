@@ -34,7 +34,7 @@ contract Hashi is ERC20Burnable{
         has_deposited[tokenId]=true;
         
         hashimaContract.transferFrom(msg.sender, address(this), tokenId);
-        bool forSale=hashimaContract.getHashima(tokenId).forSale;
+        bool forSale=hashimaContract.get(tokenId).forSale;
         
         if(forSale){
             hashimaContract.toggleForSale(tokenId,0);
@@ -66,7 +66,7 @@ contract Hashi is ERC20Burnable{
         {
             return 0;
         }
-        uint256 _stars=hashimaContract.getHashima(tokenId).stars;
+        uint256 _stars=hashimaContract.get(tokenId).stars;
         uint256 pesoEstrella=_stars*_stars*1000**_stars/64-_stars;
         uint256 checkpoint = checkpoints[beneficiary][tokenId];
         return pesoEstrella*(block.number-checkpoint);

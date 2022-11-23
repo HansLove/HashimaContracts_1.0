@@ -40,7 +40,7 @@ contract AntiBot is ERC721,Ownable{
 
 
     function lockHashima(uint256 hashimaID,uint256 amountOfBlocks)external{
-        BASE_CONTRACT.getHashima(hashimaID);
+        BASE_CONTRACT.get(hashimaID);
         BASE_CONTRACT.safeTransferFrom(msg.sender, address(this), hashimaID);
         Vote memory vote=Vote(
             amountOfBlocks
