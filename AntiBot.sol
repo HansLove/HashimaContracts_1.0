@@ -14,7 +14,7 @@ contract AntiBot is ERC721,Ownable{
     using Counters for Counters.Counter;
 
    
-   IHashima private BASE_CONTRACT;
+    IHashima private BASE_CONTRACT;
 
     Counters.Counter internal _tokenIds;
 

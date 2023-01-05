@@ -35,19 +35,15 @@ interface IHashima is IERC721{
 
     /**
     Called by the user to set a initial 'Tolerance' Number.
+    This function gaves timing to the minting process
      */
     function Init()external returns(uint256);
 
-    function Mint(
-      uint256 _stars,
-      string memory _data,
-      string memory _nonce,
-      string memory _uri,
-      uint256 _price,
-      bool _forSale
-      )external;
-
-
+    /**
+    User can change the market status of the NFT
+    1.On sale
+    2.Not avaliable
+     */
     function toggleForSale(uint256 _tokenId,uint256 _price) external;
 
     //This function change the price and the sale state in the same transaction

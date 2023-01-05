@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "./Hashima.sol";
+import "./Nakamoto.sol";
 import "./ERC721Hashima.sol";
 
 contract Hashi is ERC20Burnable{
@@ -13,10 +13,10 @@ contract Hashi is ERC20Burnable{
     mapping(uint256 => bool) public has_deposited;
     mapping(uint256 => address) public staking_accounts;
 
-    Hashima private hashimaContract;
+    Nakamoto private hashimaContract;
 
-    constructor(Hashima _contrato) ERC20("Hashi", "HASHI"){
-        hashimaContract = Hashima(_contrato);
+    constructor(Nakamoto _contrato) ERC20("Hashi", "HASHI"){
+        hashimaContract = Nakamoto(_contrato);
 
     }
 

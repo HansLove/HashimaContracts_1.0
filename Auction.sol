@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import './Hashima.sol';
+import './Nakamoto.sol';
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 
@@ -28,9 +28,9 @@ contract Auction is ReentrancyGuard {
     event AuctionEnded(address winner, uint amount);
 
 
-    Hashima private hashima;
+    Nakamoto private hashima;
 
-    constructor(Hashima _hashima){
+    constructor(Nakamoto _hashima){
         hashima=_hashima;
     }
 
