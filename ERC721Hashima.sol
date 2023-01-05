@@ -19,7 +19,11 @@ import "./IHashima.sol";
 
   uint256 public BLOCK_TOLERANCE=200;
 
+  // numero de bloque en la que se inicio el protocolo
   mapping(address=>uint256) internal tolerance;
+
+  // timestamp al momento de arrancar el protocolo
+  mapping(address=>uint256) internal timing;
   //check the string use by the user is not repeat
   mapping(string=>bool)public _names;
 
