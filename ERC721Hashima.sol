@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "./IHashima.sol";
 
-
 /**
   Hashima Protocol
  * @dev ERC721 token with proof of work inyected in the structure.
@@ -29,11 +28,21 @@ import "./IHashima.sol";
 
   mapping(uint256=>Hashi) DATA;
 
-  function Init()public override returns(uint256){
+  modifier onlyHashimaOwner(uint256 _tokenId){
+    address tokenOwner = ownerOf(_tokenId);
+    require(tokenOwner == msg.sender,'only the hashima owner');
+    _;
+  }
+  
+  function Init()public override returns(uint256,uint256){
         uint256 _block=block.number;
+        uint256 _timing=block.timestamp;
         tolerance[msg.sender]=_block;
-        emit GameStart(_block);
-        return _block;
+        timing[msg.sender]=_timing;
+        // event for external listener
+        emit InitProtocol(_block,_timing);
+        // return values for another smart contract interactions
+        return (_block,_timing);
   }
 
   function _beforeTokenTransfer(address from,address to,uint256 tokenId)internal virtual override{
@@ -42,15 +51,22 @@ import "./IHashima.sol";
           _hashima.previousOwner = payable(from);
           // update the token's current owner
           _hashima.currentOwner =payable(to);
+
+          //update the state of market if it´s for sale
+          if(_hashima.forSale)_hashima.forSale =false;
+          
+
           DATA[tokenId] = _hashima;
   }
   
-  modifier onlyHashimaOwner(uint256 _tokenId){
-    address tokenOwner = ownerOf(_tokenId);
-    require(tokenOwner == msg.sender,'only the hashima owner');
-    _;
-  }
-  
+  /** 
+  1.Check tolerance is not 0. 
+  2.Tolerance plus BLOCK TOLERANCE has to be more than the current block
+  3.The proof of work data has to be unique in this smart contract.
+  4.Sender cannot be 0
+  5.Number of stars cannot be 0
+  6.Price at least 1 wei
+  */
   modifier checkMintingData(string memory _data,uint256 _stars,uint256 _price){
       require(tolerance[msg.sender]!=0,"Tolerance cannot be 0");
       require(tolerance[msg.sender]+BLOCK_TOLERANCE>block.number,"Tolerance is expire");
@@ -61,15 +77,22 @@ import "./IHashima.sol";
     _;
   }
   
+  /**
+  Proof of work function inspired in Bitcoin by 
+  Satoshi Nakamoto & Hashcash by Adam Back*/
   function proofOfWork(
     string memory _data,
     string memory _nonce,
     uint256 _stars)internal view returns(bool,bytes32){
       bool respuesta=true;
+      // calculate sha256 of the inputs
+      //this hash must start with a number of 0's
       bytes32 _hashFinal=sha256(abi.encodePacked(
         _data,
         _nonce,
-        Strings.toString(tolerance[msg.sender])));
+        Strings.toString(tolerance[msg.sender]),
+        Strings.toString(timing[msg.sender])
+        ));
       
       for (uint256 index = 0; index < _stars; index++) {
         if (_hashFinal[index]!=0x00) {
@@ -79,12 +102,13 @@ import "./IHashima.sol";
       return (respuesta,_hashFinal);
   }
 
+  // return Hashima in mapping
   function get(uint256 _index)public view override returns(Hashi memory){
         return DATA[_index];
   }
-
-  function checkTolerance()public view override returns(uint256){
-        return tolerance[msg.sender];
+  //returns data needed for proof of work
+  function check()public view override returns(uint256,uint256){
+        return (tolerance[msg.sender],timing[msg.sender]);
   }
 
 }

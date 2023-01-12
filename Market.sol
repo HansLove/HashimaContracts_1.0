@@ -12,7 +12,8 @@ import "./ERC721Hashima.sol";
   
 abstract contract Market is ERC721Hashima{
 
-  function toggleForSale(uint256 _tokenId,uint256 _price)override public onlyHashimaOwner(_tokenId){
+  // change the market state of the Hashima
+  function toggleForSale(uint256 _tokenId)override public onlyHashimaOwner(_tokenId){
     require(msg.sender != address(0));
     require(_exists(_tokenId));
 
@@ -25,37 +26,45 @@ abstract contract Market is ERC721Hashima{
       _hashima.forSale = true;
     }
 
-    if(_price>0)_hashima.price = _price;
     // set and update that token in the mapping
     DATA[_tokenId] = _hashima;
   }
 
-  function changePrice(uint256 _tokenId,uint256 _newPrice)override external onlyHashimaOwner(_tokenId){
+  //only changes the price
+  function changePrice(uint256 _tokenId,uint256 _price)override external onlyHashimaOwner(_tokenId){
     require(msg.sender != address(0));
     require(_exists(_tokenId));
-    require(_newPrice>0,'price cannot be 0');
+    require(_price>0,'price cannot be 0');
 
     Hashi memory _hashima = DATA[_tokenId];
 
-    _hashima.price = _newPrice;
-    _hashima.forSale = !_hashima.forSale;
+    _hashima.price = _price;
     
     DATA[_tokenId] = _hashima;
   }
 
-  function changePriceAndState(uint256 _tokenId,uint256 _newPrice)external onlyHashimaOwner(_tokenId){
+  //change price and market state in the same transaction
+  function changePriceAndStatus(uint256 _tokenId,uint256 _price)override external onlyHashimaOwner(_tokenId){
     require(msg.sender != address(0));
     require(_exists(_tokenId));
-    require(_newPrice>0,'price cannot be 0');
+    // the price at least 1 wei
+    require(_price>0,'price cannot be 0');
 
     Hashi memory _hashima = DATA[_tokenId];
-
-    _hashima.price = _newPrice;
-    
+    // if token's forSale is false make it true and vice versa
+    if(_hashima.forSale) {
+      _hashima.forSale = false;
+    } else {
+      _hashima.forSale = true;
+    }
+    // change the price in metadata
+    _hashima.price = _price;
+    // save in metadata mapping
     DATA[_tokenId] = _hashima;
   }
 
-  function buyToken(uint256 _tokenId)override public payable returns(bool){
+  // buy token in case is availiable
+  function buy(uint256 _tokenId)override public payable returns(bool){
     require(msg.sender != address(0));
     require(_exists(_tokenId));
     // get the token's owner
@@ -74,10 +83,7 @@ abstract contract Market is ERC721Hashima{
     // send token's worth of native token to the owner
     (bool sent, ) = sendTo.call{value: msg.value}("");
     require(sent,'transaction not succesful');
-    //Hashima for sale is set to false.
-    _hashima.forSale =false;
-    //Save in mapping
-    DATA[_tokenId] = _hashima;
+    // if transaction is sucessful, transfer Hashima
     _transfer(tokenOwner, msg.sender, _tokenId);
     
     return sent;

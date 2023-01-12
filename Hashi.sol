@@ -36,9 +36,7 @@ contract Hashi is ERC20Burnable{
         hashimaContract.transferFrom(msg.sender, address(this), tokenId);
         bool forSale=hashimaContract.get(tokenId).forSale;
         
-        if(forSale){
-            hashimaContract.toggleForSale(tokenId,0);
-        }
+        if(forSale)hashimaContract.toggleForSale(tokenId);
         
    }
 

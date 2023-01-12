@@ -47,11 +47,11 @@ contract Server is Ownable,ReentrancyGuard{
         _;
     }
 
-    event Start(uint256 tolerance);
+    event Start(uint256 tolerance,uint256 timing);
 
     function Init()external isAdmin returns(uint256){
-        uint256 _blockNumber=hashimaContract.Init();
-        emit Start(_blockNumber);
+        (uint256 _blockNumber,uint256 _timing)=hashimaContract.Init();
+        emit Start(_blockNumber,_timing);
         return _blockNumber;
 
     }

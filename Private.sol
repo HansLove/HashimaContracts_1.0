@@ -6,9 +6,8 @@ import "./ERC721Hashima.sol";
 
 /**
 @dev
-  Hashima with metadata URI set by the user.
+  Hashima smart conttract with metadata URI set by the user.
  */
-  
 abstract contract Private is ERC721Hashima{
 
     using Counters for Counters.Counter;
@@ -19,6 +18,8 @@ abstract contract Private is ERC721Hashima{
         return _tokenIds.current();
     }    
 
+    /**Called by the functions 'Mint' and 'MintFor' after proof of work check by the smart contract 
+    implementing */
     function createHashimaItem(
         string memory _data,
         string memory _nonce,
@@ -27,8 +28,10 @@ abstract contract Private is ERC721Hashima{
         uint256 _price,
         bool _forSale,
         address _receiver
-        ) internal returns (uint256){
+        ) internal checkMintingData(_data,_stars,_price) returns (uint256){
 
+        (bool valid_work,)=proofOfWork(_data,_nonce,_stars);
+        require(valid_work,'invalid proof of work');
         _tokenIds.increment();
         uint256 newItemId = _tokenIds.current();
 

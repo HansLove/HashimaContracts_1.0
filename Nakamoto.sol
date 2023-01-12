@@ -7,12 +7,53 @@ import "./Private.sol";
 import "./Market.sol";
 
 /**@dev
-Nakamoto Smart Contract: first implementation of Hashima protocol.
+version:v1
+Nakamoto Smart Contract:first implementation of Hashima protocol.
 by: Aaron Tolentino */
 contract Nakamoto is Private,Market{
    
     constructor() ERC721("Nakamoto", "NAKAMOTOS") {}
+    /* 
+        @param: stars: amount of 0's in hash(PoW) 
+        @param: _data: unique string for PoW
+        @param: _nonce: unique number for PoW
+        @param: _uri: location metadata
+        @param: price: starting price
+        @param: forSale: is availiable
+        1.checkMintingData inside ERC721Hashima.sol
+        2.check proof of work */
+    function Mint(
+        uint256 _stars,
+        string memory _data,
+        string memory _nonce,
+        string memory _uri,
+        uint256 _price,
+        bool _forSale
+        )public checkMintingData(_data,_stars,_price){
 
+        uint256 _id=0;
+
+        (bool respuesta,bytes32 _hashFinal)=proofOfWork(_data,_nonce,_stars);
+        
+        if (respuesta) {
+            //Convert '_data' string in true inside the mapping.   
+            _names[_data]=true; 
+
+            _id=createHashimaItem(
+                _data,
+                _nonce,
+                _stars,
+                _uri,
+                _price,
+                _forSale,
+                msg.sender
+                );
+        }
+        
+        emit Minted(respuesta,_hashFinal,_id);
+    }    
+
+    //mint a Hashima in behalf of other user
     function MintFor(
         uint256 _stars,
         string memory _data,
@@ -43,41 +84,5 @@ contract Nakamoto is Private,Market{
             return _id;
 
     }
-
-    function Mint(
-        uint256 _stars,
-        string memory _data,
-        string memory _nonce,
-        string memory _uri,
-        uint256 _price,
-        bool _forSale
-        )public checkMintingData(_data,_stars,_price){
-
-        uint256 _id=0;
-
-        (bool respuesta,bytes32 _hashFinal)
-        =proofOfWork(
-            _data,
-            _nonce,
-            _stars
-            );
-        
-        if (respuesta) {
-            //Convert '_data' string in true inside the mapping.   
-            _names[_data]=true; 
-
-            _id=createHashimaItem(
-                _data,
-                _nonce,
-                _stars,
-                _uri,
-                _price,
-                _forSale,
-                msg.sender
-                );
-        }
-        
-        emit Minted(respuesta,_hashFinal,_id);
-    }    
 
 }
