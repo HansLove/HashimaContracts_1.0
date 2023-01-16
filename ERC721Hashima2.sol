@@ -16,7 +16,7 @@ import "./IHashima.sol";
 
   using Strings for uint256;
 
-  uint256 public BLOCK_TOLERANCE=200;
+  uint256 public BLOCK_TOLERANCE=500;
 
   // numero de bloque en la que se inicio el protocolo
   mapping(address=>uint256) internal tolerance;

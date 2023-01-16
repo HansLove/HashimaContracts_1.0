@@ -26,6 +26,7 @@ interface IHashima is IERC721{
       address payable previousOwner;
       uint256 stars;
       uint256 blockTolerance;
+      uint256 timing;
       string nonce;
       uint256 price;
       bool forSale;
