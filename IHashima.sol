@@ -40,7 +40,7 @@ interface IHashima is IERC721{
 
     /**
     Called by the user to set .
-    This function gaves timing to the minting process
+    This function gaves timing to the minting process.
      */
     function Init()external returns(uint256,uint256);    
 
@@ -48,7 +48,7 @@ interface IHashima is IERC721{
     //You can get the proof of work variables to 'check' the Hashima power
     function get(uint256 _index)external view returns(Hashi memory);
 
-    // total amount of hashimas
+    // total amount of Hashimas.
     function getTotal()external view returns(uint256);
 
     // Returns data created inside contract for proof of work hash.

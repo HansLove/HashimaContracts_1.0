@@ -28,29 +28,37 @@ abstract contract Private is ERC721Hashima{
         uint256 _price,
         bool _forSale,
         address _receiver
-        ) internal checkMintingData(_data,_stars,_price) returns (uint256){
+        ) internal returns (uint256){
 
-        (bool valid_work,)=proofOfWork(_data,_nonce,_stars);
-        require(valid_work,'invalid proof of work');
         _tokenIds.increment();
         uint256 newItemId = _tokenIds.current();
 
-        _mint(_receiver, newItemId);
-        _setTokenURI(newItemId,_uri);
+        /**register Hashima in mapping metadata.
+        register() checks proof of work &
+        the id uniqueness. */
+        register(
+            newItemId,
+            _data,
+            _receiver,
+            _stars,
+            _nonce,
+            _price,
+            _forSale);
 
-        Hashi memory newHashima= Hashi(
-        newItemId,//token id of hashima
-        _data,//string pick by the miner, add randomness to proof of work
-        payable(_receiver),
-        payable(address(0)),
-        _stars,
-        tolerance[msg.sender],
-        _nonce,
-        _price,
-        _forSale
-        );
+        
+        _setTokenURI(newItemId,_uri);            
 
-        DATA[newItemId] = newHashima;
+        // Hashi memory newHashima= Hashi(
+        //     newItemId,//token id of hashima
+        //     _data,//string pick by the miner, add randomness to proof of work
+        //     payable(_receiver),
+        //     payable(address(0)),
+        //     _stars,
+        //     tolerance[msg.sender],
+        //     _nonce,
+        //     _price,
+        //     _forSale
+        // );
 
         return newItemId;
 

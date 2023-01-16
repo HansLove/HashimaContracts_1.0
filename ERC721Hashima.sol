@@ -102,10 +102,43 @@ import "./IHashima.sol";
       return (respuesta,_hashFinal);
   }
 
+  function register(
+    uint256 newItemId,
+    string memory _data,
+    address _receiver,
+    uint256 _stars,
+    string memory _nonce,
+    uint256 _price,
+    bool _forSale
+    )internal{
+      
+      (bool respuesta,)=proofOfWork(_data,_nonce,_stars);
+      require(respuesta,'incorrect proof of work');
+      require(!_exists(newItemId),'cannot be');
+
+      Hashi memory newHashima= Hashi(
+          newItemId,//token id of hashima
+          _data,//string pick by the miner, add randomness to proof of work
+          payable(_receiver),
+          payable(address(0)),
+          _stars,
+          tolerance[msg.sender],
+          _nonce,
+          _price,
+          _forSale
+      );
+
+      _mint(_receiver, newItemId);
+      _names[_data]=true; 
+      DATA[newItemId] = newHashima;
+
+  }
+
   // return Hashima in mapping
   function get(uint256 _index)public view override returns(Hashi memory){
         return DATA[_index];
   }
+  
   //returns data needed for proof of work
   function check()public view override returns(uint256,uint256){
         return (tolerance[msg.sender],timing[msg.sender]);

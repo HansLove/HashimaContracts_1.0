@@ -33,24 +33,22 @@ contract Nakamoto is Private,Market{
 
         uint256 _id=0;
 
-        (bool respuesta,bytes32 _hashFinal)=proofOfWork(_data,_nonce,_stars);
+        // (bool respuesta,bytes32 _hashFinal)=proofOfWork(_data,_nonce,_stars);
         
-        if (respuesta) {
-            //Convert '_data' string in true inside the mapping.   
-            _names[_data]=true; 
+        // if (respuesta) {
 
-            _id=createHashimaItem(
-                _data,
-                _nonce,
-                _stars,
-                _uri,
-                _price,
-                _forSale,
-                msg.sender
-                );
-        }
+        _id=createHashimaItem(
+            _data,
+            _nonce,
+            _stars,
+            _uri,
+            _price,
+            _forSale,
+            msg.sender
+            );
+        // }
         
-        emit Minted(respuesta,_hashFinal,_id);
+        // emit Minted(respuesta,_hashFinal,_id);
     }    
 
     //mint a Hashima in behalf of other user
