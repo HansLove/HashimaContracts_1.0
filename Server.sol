@@ -21,8 +21,8 @@ contract Server is Ownable,ReentrancyGuard{
     mapping(address=>bool) debt;
 
     // Lista de administradores
-    mapping(address=>bool) ADMIN
-    ;
+    mapping(address=>bool) ADMIN;
+    
     uint256 minPrice=0.1 ether;
 
     function payServer()external payable{
@@ -37,7 +37,6 @@ contract Server is Ownable,ReentrancyGuard{
         ADMIN[_user]=!ADMIN[_user];
     }
 
-    //Generar un nuevo administrador
     function checkPayment(address _user)public view returns(bool){
         return debt[_user];
     }

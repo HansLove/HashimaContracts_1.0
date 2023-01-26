@@ -28,8 +28,7 @@ contract Hashi is ERC20Burnable{
     function deposit(address _contract,uint256 tokenId) external{
         require (msg.sender == ERC721Hashima(_contract).ownerOf(tokenId), 'Sender must be owner');
         require (!has_deposited[_contract][tokenId], 'Sender already deposited');
-        uint256 block_rate=ERC721Hashima(_contract).BLOCK_TOLERANCE;
-        require(block_rate==200);
+        
         IHashima.Hashi memory _hashimaMetada=ERC721Hashima(_contract).get(tokenId);
 
         require(proofOfWork(_hashimaMetada.data, _hashimaMetada.nonce, _hashimaMetada.stars,_hashimaMetada.blockTolerance,_hashimaMetada.timing),'not valid proof of work');

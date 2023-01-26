@@ -16,7 +16,7 @@ import "./IHashima.sol";
 
   using Strings for uint256;
 
-  uint256 public BLOCK_TOLERANCE=200;
+  // uint256 public BLOCK_TOLERANCE=200;
 
   // numero de bloque en la que se inicio el protocolo
   mapping(address=>uint256) internal tolerance;
@@ -33,6 +33,26 @@ import "./IHashima.sol";
     require(tokenOwner == msg.sender,'only the hashima owner');
     _;
   }
+    /** 
+  1.Check tolerance is not 0. 
+  2.Tolerance plus BLOCK TOLERANCE has to be more than the current block
+  3.The proof of work data has to be unique in this smart contract.
+  4.Sender cannot be 0
+  5.Number of stars cannot be 0
+  6.Price at least 1 wei
+  */
+  modifier checkMintingData(string memory _data,uint256 _stars,uint256 _price){
+      require(tolerance[msg.sender]!=0);
+      require(timing[msg.sender]!=0);
+      // require(tolerance[msg.sender]+BLOCK_TOLERANCE>block.number,"Tolerance is expire");
+      require(timing[msg.sender]+600>block.timestamp,"Timing is expire");
+      require(_names[_data]==false,"Not unique data");
+      require(msg.sender != address(0));
+      require(_stars>0,"At least 1 star");
+      require(_price>0,"Price cannot be 0");
+    _;
+  }
+  
   
   function Init()public override returns(uint256,uint256){
         uint256 _block=block.number;
@@ -54,36 +74,19 @@ import "./IHashima.sol";
 
           //update the state of market if it´s for sale
           if(_hashima.forSale)_hashima.forSale =false;
-          
 
           DATA[tokenId] = _hashima;
   }
   
-  /** 
-  1.Check tolerance is not 0. 
-  2.Tolerance plus BLOCK TOLERANCE has to be more than the current block
-  3.The proof of work data has to be unique in this smart contract.
-  4.Sender cannot be 0
-  5.Number of stars cannot be 0
-  6.Price at least 1 wei
-  */
-  modifier checkMintingData(string memory _data,uint256 _stars,uint256 _price){
-      require(tolerance[msg.sender]!=0,"Tolerance cannot be 0");
-      require(tolerance[msg.sender]+BLOCK_TOLERANCE>block.number,"Tolerance is expire");
-      require(_names[_data]==false,"Not unique data");
-      require(msg.sender != address(0));
-      require(_stars>0,"At least 1 star");
-      require(_price>0,"Price cannot be 0");
-    _;
-  }
-  
+
   /**
   Proof of work function inspired in Bitcoin by 
   Satoshi Nakamoto & Hashcash by Adam Back*/
   function proofOfWork(
     string memory _data,
     string memory _nonce,
-    uint256 _stars)internal view returns(bool,bytes32){
+    uint256 _stars
+    )internal view returns(bool,bytes32){
       bool respuesta=true;
       // calculate sha256 of the inputs
       //this hash must start with a number of 0's
@@ -130,6 +133,7 @@ import "./IHashima.sol";
       );
 
       _mint(_receiver, newItemId);
+      // update data in mapping so cannot be use again
       _names[_data]=true; 
       DATA[newItemId] = newHashima;
 

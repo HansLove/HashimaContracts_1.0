@@ -11,7 +11,9 @@ version:v1
 Nakamoto Smart Contract:first implementation of Hashima protocol.
 by: Aaron Tolentino */
 contract Nakamoto is Private,Market{
-   
+
+    uint256 HARD_CAP=21000;
+    
     constructor() ERC721("Nakamoto", "NAKAMOTOS") {}
     /* 
         @param: stars: amount of 0's in hash(PoW) 
@@ -30,14 +32,11 @@ contract Nakamoto is Private,Market{
         uint256 _price,
         bool _forSale
         )public checkMintingData(_data,_stars,_price){
-
-        uint256 _id=0;
-
-        // (bool respuesta,bytes32 _hashFinal)=proofOfWork(_data,_nonce,_stars);
         
-        // if (respuesta) {
+        require(HARD_CAP>getTotal(),'hard cap reached');
+        
 
-        _id=createHashimaItem(
+        createHashimaItem(
             _data,
             _nonce,
             _stars,
@@ -48,7 +47,6 @@ contract Nakamoto is Private,Market{
             );
         // }
         
-        // emit Minted(respuesta,_hashFinal,_id);
     }    
 
     //mint a Hashima in behalf of other user
@@ -60,26 +58,16 @@ contract Nakamoto is Private,Market{
         uint256 _price,
         bool _forSale,
         address _receiver)public checkMintingData(_data,_stars,_price)returns(uint256){
-            uint256 _id=0;
 
-            (bool respuesta,)=proofOfWork(_data,_nonce,_stars);
-      
-            if (respuesta) {
-                //Convert '_data' string in true inside the mapping.   
-                _names[_data]=true; 
-
-                _id=createHashimaItem(
-                    _data,
-                    _nonce,
-                    _stars,
-                    _uri,
-                    _price,
-                    _forSale,
-                    _receiver
-                    );
-            }
-            
-            return _id;
+        createHashimaItem(
+            _data,
+            _nonce,
+            _stars,
+            _uri,
+            _price,
+            _forSale,
+            _receiver
+            );
 
     }
 
