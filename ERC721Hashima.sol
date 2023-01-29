@@ -116,23 +116,26 @@ import "./IHashima.sol";
     )internal{
       
       (bool respuesta,)=proofOfWork(_data,_nonce,_stars);
+      // correct proof of work
       require(respuesta,'incorrect proof of work');
+      // id cannot exist
       require(!_exists(newItemId),'cannot be');
+
+      _mint(_receiver, newItemId);
 
       Hashi memory newHashima= Hashi(
           newItemId,//token id of hashima
           _data,//string pick by the miner, add randomness to proof of work
-          payable(_receiver),
-          payable(address(0)),
-          _stars,
-          tolerance[msg.sender],
-          timing[msg.sender],
-          _nonce,
+          payable(_receiver),//current owner
+          payable(address(0)),//previous owner(for staking)
+          _stars,//number of 0 in the hash
+          tolerance[msg.sender],//block.number at Init()
+          timing[msg.sender],//block.timestamp at Init()
+          _nonce,//unique number for proof of work
           _price,
           _forSale
       );
 
-      _mint(_receiver, newItemId);
       // update data in mapping so cannot be use again
       _names[_data]=true; 
       DATA[newItemId] = newHashima;

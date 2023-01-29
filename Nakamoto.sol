@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Private.sol";
 import "./Market.sol";
 
@@ -31,12 +29,12 @@ contract Nakamoto is Private,Market{
         string memory _uri,
         uint256 _price,
         bool _forSale
-        )public checkMintingData(_data,_stars,_price){
+        )public checkMintingData(_data,_stars,_price)returns(uint256){
         
+        uint256 _id=0;
         require(HARD_CAP>getTotal(),'hard cap reached');
-        
 
-        createHashimaItem(
+        _id=createHashimaItem(
             _data,
             _nonce,
             _stars,
@@ -45,7 +43,7 @@ contract Nakamoto is Private,Market{
             _forSale,
             msg.sender
             );
-        // }
+        return _id;
         
     }    
 
@@ -58,16 +56,20 @@ contract Nakamoto is Private,Market{
         uint256 _price,
         bool _forSale,
         address _receiver)public checkMintingData(_data,_stars,_price)returns(uint256){
-
-        createHashimaItem(
-            _data,
-            _nonce,
-            _stars,
-            _uri,
-            _price,
-            _forSale,
-            _receiver
-            );
+            uint256 _id=0;
+            require(HARD_CAP>getTotal(),'hard cap reached');
+    
+            _id=createHashimaItem(
+                _data,
+                _nonce,
+                _stars,
+                _uri,
+                _price,
+                _forSale,
+                _receiver
+                );
+        
+            return _id;
 
     }
 

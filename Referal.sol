@@ -3,10 +3,14 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./Nakamoto.sol";
 
 
-contract Referal is Ownable{
+/**
+
+ */
+contract Referal is Ownable,ReentrancyGuard{
     // libreria contador
     using Counters for Counters.Counter;
 
@@ -17,21 +21,32 @@ contract Referal is Ownable{
 
     constructor(Nakamoto hashima_contract){
         hashimaContract=hashima_contract;
-        // referencia de tiempo
-        checkPoint[msg.sender]=block.number;
         //generar el primer admin de este contrato
         ADMIN[msg.sender]=true;
+        isMember[msg.sender]=true;
+        isGenesis[msg.sender]=true;
+        // BLOCK_TOLERANCE=block_tolerance;
+    }
+    // depends on the blockchain!
+    // uint256 BLOCK_TOLERANCE;
+    uint256 SELL_TARGET=2;
+    
+    uint256 MIN_PRICE=5*10**17 wei;
 
+    modifier isAdmin(){
+        require(ADMIN[msg.sender],'not admin');
+        _;
     }
 
-    // ________________lider_____________________
-    mapping(address=>bool) isLeader;
-    //Acumulado de los lideres
-    mapping(address=>uint256) leaderBalance;
+    // ________________Genesis_______________________
+    mapping(address=>bool) isGenesis;
     //Acumulado de los lideres si alcanzan el objetivo
-    mapping(address=>uint256) leaderBalanceReward;
-    //Contador del total de los lideres
-    mapping(address=>uint256) leaderCounter;
+    mapping(address=>uint256) genesisReward;
+    // ________________Genesis_______________________
+
+    //Contador del total de los miembros
+    mapping(address=>uint256) COUNTER;
+
     // Lista de administradores
     mapping(address=>bool) ADMIN;
 
@@ -52,7 +67,59 @@ contract Referal is Ownable{
 
     event Start(uint256 tolerance,uint256 timing);
 
-    // Init the Hashima protocol
+    /**Main function of the contract
+    Payment logic
+    */
+    function payment(address _ID)external nonReentrant payable{
+        // reach the value
+        require(msg.value>=MIN_PRICE,'not the correct price');
+        //referal ID has to be a member
+        require(isMember[_ID],'referal has to be member');
+        uint256 _value=msg.value;
+
+        //Si el usuario que compra no es miembro, hacerlo.
+        if(!isMember[msg.sender]){
+            isMember[msg.sender]=true;
+            REFERALS[msg.sender]=_ID;
+           
+        }        
+
+        if(isGenesis[_ID]){
+            //Proceso si el referido es un Genesis--------------------GENESIS--------------
+            //°Se guarda el 40% del pago
+            //°Se guarda el 15% directo al Genesis
+
+            //Propiedad del Genesis actual 15%
+            memberBalance[_ID]=memberBalance[_ID]+(_value/100)*15;
+
+            //Actualizo el acumulado de rewards a un 30%
+            genesisReward[_ID]=genesisReward[_ID]+(_value/100)*25;
+            
+            //if account is a Genesis,the amount for BOVEDA is 60%
+            BOVEDA=BOVEDA+(_value/100)*60;
+            
+        }else{
+            //member ID is not a Genisis
+            //Un miembro tiene un referido si o si
+
+            //La ganancia asegurada aqui es del 88
+            BOVEDA=BOVEDA+(_value/100)*88;
+            
+            //Le doy el 10% al ID del referido
+            memberBalance[_ID]+=(_value/100)*10;
+
+        }
+
+        //update counter
+        COUNTER[_ID]=COUNTER[_ID]+1;
+
+        //Agrego el 2% al que refirio al referido
+        memberBalance[REFERALS[_ID]]+=(_value/100)*2;
+        //Mint del token
+        debt[msg.sender]=true;
+    }    
+
+    // Init the Hashima protocol inside this smart contract
     function Init()external isAdmin returns(uint256){
         (uint256 _blockNumber,uint256 _timing)=hashimaContract.Init();
         emit Start(_blockNumber,_timing);
@@ -60,82 +127,14 @@ contract Referal is Ownable{
 
     }
 
-    /**Main function 
-    Funcion que se encarga del sistema de pago
-    */
-    function payment(address _ID)public payable{
-        require(msg.value>=MIN_PRICE,'not the correct price');
-        require(isMember[_ID],'referal has to be member');
-        //El referido tiene que ser miembro
-        uint256 _value=msg.value;
-
-        //Si el usuario que compra no es miembro, hacerlo.
-        if(!isMember[msg.sender]){
-            isMember[msg.sender]=true;
-            REFERALS[msg.sender]=_ID;
-            checkPoint[msg.sender]=block.number;
-           
+    //Solo el administrador del contrato puede definir nuevos 'lideres'
+    function createGenesis(address new_genesis)public onlyOwner{
+        // address is not a member. Admin becomes the Reference
+        if(!isMember[new_genesis]){
+            isMember[new_genesis]=true;
+            REFERALS[new_genesis]=msg.sender;
         }        
-
-        if(isLeader[_ID]){
-            //Proceso si el referido es un lider--------------------LIDER--------------
-            //°Se guarda el 40% del pago
-            //°Se guarda el 10% directo al referido
-
-            //10% ya es propiedad del lider
-            leaderBalance[_ID]=leaderBalance[_ID]+(_value/100)*10;
-            //Actualizo el acumulado de rewards a un 30%
-            leaderBalanceReward[_ID]=leaderBalanceReward[_ID]+(_value/100)*30;
-
-            //Sumo 1 al contador del lider
-            leaderCounter[_ID]+=1;
-            
-            //Si es lider, la cantidad ganada es 60% porque el otro
-            //no es ganancia asegurada para el admin
-            BOVEDA=BOVEDA+(_value/100)*60;
-            
-            //Los lideres si llevan un conteo, los miembros no.
-            //Si el lider alcanza 100 ventas, se gana el 40% de la venta.
-            leaderBalance[_ID]+=1;
-            
-        }else{
-            //El ID entregado no es un lider
-            //Un miembro tiene un referido si o si
-
-            //La ganancia asegurada aqui es del 88
-            BOVEDA=BOVEDA+(_value/100)*88;
-            
-            //Agrego el 2% al que refirio al referido
-            memberBalance[REFERALS[_ID]]+=(_value/100)*2;
-
-            //Le doy el 10% al ID del referido
-            memberBalance[_ID]+=(_value/100)*10;
-
-        }
-        //Mint del token
-        debt[msg.sender]=true;
-    }
-
-
-    //Cuanto tiempo tiene que pasar hasta que los usuarios 
-    //puedan sacar el dinero final
-    uint256 MONTH=864000;
-    uint256 public POINT=0;
-
-    uint256 SELL_TARGET=99;
-    
-    uint256 MIN_PRICE=5*10**17 wei;
-
-    modifier isAdmin(){
-        require(ADMIN[msg.sender],'not admin');
-        _;
-    }
-
-        //Solo el administrador del contrato puede definir nuevos 'lideres'
-    function createLeader(address _newLider)public onlyOwner{
-        isLeader[_newLider]=true;
-        isMember[_newLider]=true;
-        checkPoint[msg.sender]=block.number;
+        isGenesis[new_genesis]=true;
     }
 
     event New(uint256 _id);
@@ -182,14 +181,39 @@ contract Referal is Ownable{
         return isMember[_member];
     }
 
-    function getIsLeader(address _leader)external view returns(bool){
-        return isLeader[_leader];
+    // is the address a genesis member of this smart contract?
+    function getIsGenesis(address _leader)external view returns(bool){
+        return isGenesis[_leader];
     }
 
-    //----- Retiros ----------------------------------------------------------
-    modifier checkTime(){
-        require(block.number>checkPoint[msg.sender]+MONTH,'Not the time yet');
-        _;
+    // ______________________withdraw__________________________
+    //Genesis member withdraw 
+    function withdrawGenesis()external nonReentrant{
+        require(isGenesis[msg.sender],'has to be Genesis');
+        require(memberBalance[msg.sender]>0,'leader balance cannot be 0');
+        // require(checkPoint[msg.sender]+BLOCK_TOLERANCE<block.number,'not the time yet');
+        uint256 totalAmount=memberBalance[msg.sender];
+        
+        //If Genesis reach 'SELL_TARGET' increase amount
+        if(COUNTER[msg.sender]>SELL_TARGET){
+            totalAmount=totalAmount+genesisReward[msg.sender];
+        }
+        // require(totalAmount<address(this).balance);
+
+        (bool sent, ) = msg.sender.call{value:totalAmount}("");
+        require(sent,"Fail in the withdraw");
+        //Si el pago es exitoso, actualizar todos los balances.
+        // Update BOVEDA balance if SELL_TARGET is not reached
+        if(COUNTER[msg.sender]<SELL_TARGET)BOVEDA+=genesisReward[msg.sender];
+        //Reiniciar el contador(solo aplica a lideres)
+        COUNTER[msg.sender]=0;
+        //Reiniciar el balance general
+        memberBalance[msg.sender]=0;
+        //Reiniciar el balance de las hipoteticas ganancias
+        genesisReward[msg.sender]=0;
+
+        // checkPoint[msg.sender]=block.number;
+
     }
 
     //El administrador retira
@@ -203,14 +227,12 @@ contract Referal is Ownable{
     }
 
     //Retiro para los miembros
-    function withdraw()checkTime external{
-        require(checkPoint[msg.sender]+MONTH<block.number,'Not the time yet');
+    function withdraw() external nonReentrant{
         uint256 _balance=memberBalance[msg.sender];
         require(_balance>0,'balance is 0');
         (bool sent, ) = msg.sender.call{value:_balance}("");
         require(sent,"No cool withdraw to member");
         memberBalance[msg.sender]=0;
-        checkPoint[msg.sender]=block.number;
 
     }
 
@@ -218,19 +240,20 @@ contract Referal is Ownable{
         return memberBalance[_address];  
     }
 
-    function getLeaderBalance(address _address)external view returns(uint256){
-        return leaderBalance[_address];  
+    function getGenesisReward(address _address)external view returns(uint256){
+        return genesisReward[_address];  
     }
+
     function getReferal(address _address)external view returns(address){
         return REFERALS[_address];  
     }
 
-    function getCheckPoint(address _address)external view returns(uint256){
-        return (checkPoint[_address]+MONTH)-block.number;  
-    }
-
     function checkPayment(address _user)public view returns(bool){
         return debt[_user];
+    }
+
+    function getCounter(address _account)public view returns(uint256){
+        return COUNTER[_account];
     }
 
 }
