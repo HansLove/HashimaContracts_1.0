@@ -7,8 +7,6 @@ contract Calculator{
 
 using Strings for uint256;
 
-
-
 function checkHash(
         string memory _data,
         string memory _nonce,
@@ -24,7 +22,6 @@ function checkHash(
         ));
 
         bool respuesta=true;
-
 
         for (uint256 index = 0; index < _stars; index++) {
             if (_hashFinal[index]!=0x00) {

@@ -64,7 +64,7 @@ abstract contract Market is ERC721Hashima{
   }
 
   // buy token in case is availiable
-  function buy(uint256 _tokenId)override public payable returns(bool){
+  function buy(uint256 _tokenId)override external payable returns(bool){
     require(msg.sender != address(0));
     require(_exists(_tokenId));
     // get the token's owner

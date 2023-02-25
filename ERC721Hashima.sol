@@ -3,16 +3,23 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+// import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 import "./IHashima.sol";
 
 /**
   Hashima Protocol
  * @dev ERC721 token with proof of work inyected in the structure.
- by: Aaron Tolentino
- */
-  abstract contract ERC721Hashima is ERC721URIStorage,IHashima{
+ by: Aaron Tolentino*/
+  abstract contract ERC721Hashima is 
+  // ERC721
+  ERC721URIStorage
+  ,IHashima{
+
+  using Counters for Counters.Counter;
+
+  Counters.Counter internal _tokenIds;
 
   using Strings for uint256;
 
@@ -23,8 +30,6 @@ import "./IHashima.sol";
 
   // timestamp al momento de arrancar el protocolo
   mapping(address=>uint256) internal timing;
-  //check the string use by the user is not repeat
-  mapping(string=>bool)public _names;
 
   mapping(uint256=>Hashi) DATA;
 
@@ -41,12 +46,11 @@ import "./IHashima.sol";
   5.Number of stars cannot be 0
   6.Price at least 1 wei
   */
-  modifier checkMintingData(string memory _data,uint256 _stars,uint256 _price){
+  modifier checkMintingData(string memory _uri,uint256 _stars,uint256 _price){
       require(tolerance[msg.sender]!=0);
       require(timing[msg.sender]!=0);
-      // require(tolerance[msg.sender]+BLOCK_TOLERANCE>block.number,"Tolerance is expire");
       require(timing[msg.sender]+600>block.timestamp,"Timing is expire");
-      require(_names[_data]==false,"Not unique data");
+      require(bytes(_uri).length >= 1, "Data must be at least 1 byte long");
       require(msg.sender != address(0));
       require(_stars>0,"At least 1 star");
       require(_price>0,"Price cannot be 0");
@@ -54,15 +58,19 @@ import "./IHashima.sol";
   }
   
   
-  function Init()public override returns(uint256,uint256){
-        uint256 _block=block.number;
+  function init()public override returns(uint256,uint256){
         uint256 _timing=block.timestamp;
-        tolerance[msg.sender]=_block;
+        uint256 _randomizer=uint256(keccak256(abi.encodePacked(
+        block.timestamp, 
+        block.coinbase,
+        block.number)))%(_tokenIds.current()+100);
+
+        tolerance[msg.sender]=_randomizer;
         timing[msg.sender]=_timing;
         // event for external listener
-        emit InitProtocol(_block,_timing);
+        emit InitProtocol(_randomizer,_timing);
         // return values for another smart contract interactions
-        return (_block,_timing);
+        return (_randomizer,_timing);
   }
 
   function _beforeTokenTransfer(address from,address to,uint256 tokenId)internal virtual override{
@@ -82,11 +90,7 @@ import "./IHashima.sol";
   /**
   Proof of work function inspired in Bitcoin by 
   Satoshi Nakamoto & Hashcash by Adam Back*/
-  function proofOfWork(
-    string memory _data,
-    string memory _nonce,
-    uint256 _stars
-    )internal view returns(bool,bytes32){
+  modifier proofOfWork(string memory _data,string memory _nonce, uint256 _stars){
       bool respuesta=true;
       // calculate sha256 of the inputs
       //this hash must start with a number of 0's
@@ -102,30 +106,34 @@ import "./IHashima.sol";
                 respuesta=false;  
             }
       }
-      return (respuesta,_hashFinal);
+      require(respuesta,'invalid proof of work');
+    _;
   }
 
+
   function register(
-    uint256 newItemId,
-    string memory _data,
+    string memory _uri,
     address _receiver,
     uint256 _stars,
     string memory _nonce,
     uint256 _price,
     bool _forSale
-    )internal{
+    )internal 
+    proofOfWork(_uri,_nonce,_stars)  
+    returns(uint256){
       
-      (bool respuesta,)=proofOfWork(_data,_nonce,_stars);
-      // correct proof of work
-      require(respuesta,'incorrect proof of work');
-      // id cannot exist
-      require(!_exists(newItemId),'cannot be');
+      _tokenIds.increment();
+        // new Hashima ID
+      uint256 newItemId = _tokenIds.current();
+      require(!_exists(newItemId),'cannot exist');
 
       _mint(_receiver, newItemId);
+      _setTokenURI(newItemId, _uri);
+      
+
 
       Hashi memory newHashima= Hashi(
           newItemId,//token id of hashima
-          _data,//string pick by the miner, add randomness to proof of work
           payable(_receiver),//current owner
           payable(address(0)),//previous owner(for staking)
           _stars,//number of 0 in the hash
@@ -136,11 +144,18 @@ import "./IHashima.sol";
           _forSale
       );
 
-      // update data in mapping so cannot be use again
-      _names[_data]=true; 
       DATA[newItemId] = newHashima;
+      
+      // Return ID
+      return newItemId;
 
   }
+
+
+  function getTotal()public view override returns(uint256){
+        return _tokenIds.current();
+  }    
+
 
   // return Hashima in mapping
   function get(uint256 _index)public view override returns(Hashi memory){

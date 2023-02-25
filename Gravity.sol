@@ -4,39 +4,28 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "./Nakamoto.sol";
+import "./IHashima.sol";
 
 
 /**
-
+Liquid gravity smart contract by Aaron Tolentino
  */
-contract Referal is Ownable,ReentrancyGuard{
+contract Gravity is Ownable,ReentrancyGuard{
     // libreria contador
     using Counters for Counters.Counter;
 
     // Contador interno
     Counters.Counter private IDs;
 
-    Nakamoto hashimaContract;
-
-    constructor(Nakamoto hashima_contract){
-        hashimaContract=hashima_contract;
-        //generar el primer admin de este contrato
-        ADMIN[msg.sender]=true;
+    constructor(){
         isMember[msg.sender]=true;
         isGenesis[msg.sender]=true;
         // BLOCK_TOLERANCE=block_tolerance;
     }
-    // depends on the blockchain!
-    // uint256 BLOCK_TOLERANCE;
+
     uint256 SELL_TARGET=2;
     
     uint256 MIN_PRICE=5*10**17 wei;
-
-    modifier isAdmin(){
-        require(ADMIN[msg.sender],'not admin');
-        _;
-    }
 
     // ________________Genesis_______________________
     mapping(address=>bool) isGenesis;
@@ -47,14 +36,8 @@ contract Referal is Ownable,ReentrancyGuard{
     //Contador del total de los miembros
     mapping(address=>uint256) COUNTER;
 
-    // Lista de administradores
-    mapping(address=>bool) ADMIN;
-
-    // Rastrear que cuentas han pagado su emision con el contrato
-    mapping(address=>bool) debt;
-    // ___________________-
         //Lista de todos los que interactuan con el contrato
-    mapping(address=>bool) isMember;
+    mapping(address=>bool) internal isMember;
     //Balance de los miembros
     mapping(address=>uint256) memberBalance;
 
@@ -70,12 +53,9 @@ contract Referal is Ownable,ReentrancyGuard{
     /**Main function of the contract
     Payment logic
     */
-    function payment(address _ID)external nonReentrant payable{
-        // reach the value
-        require(msg.value>=MIN_PRICE,'not the correct price');
+    function payment(address _ID,uint256 _value)external onlyOwner{
         //referal ID has to be a member
         require(isMember[_ID],'referal has to be member');
-        uint256 _value=msg.value;
 
         //Si el usuario que compra no es miembro, hacerlo.
         if(!isMember[msg.sender]){
@@ -115,13 +95,12 @@ contract Referal is Ownable,ReentrancyGuard{
 
         //Agrego el 2% al que refirio al referido
         memberBalance[REFERALS[_ID]]+=(_value/100)*2;
-        //Mint del token
-        debt[msg.sender]=true;
     }    
 
-    // Init the Hashima protocol inside this smart contract
-    function Init()external isAdmin returns(uint256){
-        (uint256 _blockNumber,uint256 _timing)=hashimaContract.Init();
+
+    // init the Hashima protocol inside this smart contract
+    function init(address hashima_contrac)external onlyOwner returns(uint256){
+        (uint256 _blockNumber,uint256 _timing)=IHashima(hashima_contrac).init();
         emit Start(_blockNumber,_timing);
         return _blockNumber;
 
@@ -152,27 +131,23 @@ contract Referal is Ownable,ReentrancyGuard{
 
     //cuando el servidor tenga listo el hashima lo deposita
     function mint(
+        address hashima_contract,
         uint256 _stars,
-        string memory _data,
-        string memory _nonce,
         string memory _uri,
+        string memory _nonce,
         uint256 _price,
         bool _forSale,
         address _receiver
-        )external isAdmin{
+        )external onlyOwner{
 
-        require(debt[_receiver],'user no pay');
-
-        uint256 ID=hashimaContract.MintFor(
+        uint256 ID=IHashima(hashima_contract).mintFor(
             _stars, 
-            _data,
+            _uri,
             _nonce, 
-            _uri, 
             _price, 
             _forSale, 
             _receiver
         );
-        debt[_receiver]=false;
         emit New(ID);
 
     }
@@ -186,7 +161,7 @@ contract Referal is Ownable,ReentrancyGuard{
         return isGenesis[_leader];
     }
 
-    // ______________________withdraw__________________________
+    
     //Genesis member withdraw 
     function withdrawGenesis()external nonReentrant{
         require(isGenesis[msg.sender],'has to be Genesis');
@@ -248,9 +223,6 @@ contract Referal is Ownable,ReentrancyGuard{
         return REFERALS[_address];  
     }
 
-    function checkPayment(address _user)public view returns(bool){
-        return debt[_user];
-    }
 
     function getCounter(address _account)public view returns(uint256){
         return COUNTER[_account];

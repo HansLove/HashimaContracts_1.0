@@ -15,9 +15,7 @@ contract Hashi is ERC20Burnable{
 
     // Nakamoto private hashimaContract;
 
-    constructor(
-        // Nakamoto _contrato
-        ) ERC20("Hashi", "HASHI"){
+    constructor() ERC20("Hashi", "HASHI"){
 
     }
 
@@ -29,9 +27,7 @@ contract Hashi is ERC20Burnable{
         require (msg.sender == ERC721Hashima(_contract).ownerOf(tokenId), 'Sender must be owner');
         require (!has_deposited[_contract][tokenId], 'Sender already deposited');
         
-        IHashima.Hashi memory _hashimaMetada=ERC721Hashima(_contract).get(tokenId);
 
-        require(proofOfWork(_hashimaMetada.data, _hashimaMetada.nonce, _hashimaMetada.stars,_hashimaMetada.blockTolerance,_hashimaMetada.timing),'not valid proof of work');
         //La altura del bloque de partida
         checkpoints[msg.sender][tokenId] = block.number;
         staking_accounts[tokenId]=msg.sender;
@@ -74,31 +70,31 @@ contract Hashi is ERC20Burnable{
         return pesoEstrella*(block.number-checkpoint);
     }
 
-      /**
-  Proof of work function inspired in Bitcoin by 
-  Satoshi Nakamoto & Hashcash by Adam Back*/
-  function proofOfWork(
-    string memory _data,
-    string memory _nonce,
-    uint256 _stars,
-    uint256 _tolerance,
-    uint256 _timing
-    )internal pure returns(bool){
-      bool respuesta=true;
-      // calculate sha256 of the inputs
-      //this hash must start with a number of 0's
-      bytes32 _hashFinal=sha256(abi.encodePacked(
-        _data,
-        _nonce,
-        Strings.toString(_tolerance),
-        Strings.toString(_timing)
-        ));
-      
-      for (uint256 index = 0; index < _stars; index++) {
-        if (_hashFinal[index]!=0x00) {
-                respuesta=false;  
-            }
-      }
-      return respuesta;
-  }
+        /**
+    Proof of work function inspired in Bitcoin by 
+    Satoshi Nakamoto & Hashcash by Adam Back*/
+    function proofOfWork(
+        string memory _data,
+        string memory _nonce,
+        uint256 _stars,
+        uint256 _tolerance,
+        uint256 _timing
+        )internal pure returns(bool){
+        bool respuesta=true;
+        // calculate sha256 of the inputs
+        //this hash must start with a number of 0's
+        bytes32 _hashFinal=sha256(abi.encodePacked(
+            _data,
+            _nonce,
+            Strings.toString(_tolerance),
+            Strings.toString(_timing)
+            ));
+        
+        for (uint256 index = 0; index < _stars; index++) {
+            if (_hashFinal[index]!=0x00) {
+                    respuesta=false;  
+                }
+        }
+        return respuesta;
+    }
 }
