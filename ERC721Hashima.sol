@@ -13,7 +13,6 @@ import "./IHashima.sol";
  * @dev ERC721 token with proof of work inyected in the structure.
  by: Aaron Tolentino*/
   abstract contract ERC721Hashima is 
-  // ERC721
   ERC721URIStorage
   ,IHashima{
 
@@ -23,7 +22,6 @@ import "./IHashima.sol";
 
   using Strings for uint256;
 
-  // uint256 public BLOCK_TOLERANCE=200;
 
   // numero de bloque en la que se inicio el protocolo
   mapping(address=>uint256) internal tolerance;

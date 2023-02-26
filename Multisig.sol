@@ -33,7 +33,7 @@ contract Multisig {
 
     Transaction[] public transactions;
 
-    modifier onlyOwner() {
+    modifier onlyAdmin() {
         require(isOwner[msg.sender], "not owner");
         _;
     }
@@ -79,69 +79,12 @@ contract Multisig {
 
     event Init(uint256, uint256);
 
-    // 1. Pay to server
-    function payServer()external payable{
-        require(msg.value>=PRICE,'min price no reach');
-        require(!debt[msg.sender],'already paid');
-        debt[msg.sender]=true;
-    }
 
-    // 2. Multisig llama a init() del servidor
-    function init(address hashima_contract)external onlyOwner returns(uint256,uint256){
-        (uint256 _blockNumber,uint256 _timing)=IHashima(hashima_contract).init();
-        emit Init(_blockNumber,_timing);
-        return (_blockNumber,_timing);
-    }
-
-    uint256 PRICE=0.1 ether;
-
-
-    modifier checkMintingData(string memory _data,uint256 _stars,uint256 _price){
-        require(bytes(_data).length >= 1, "Data must be at least 1 byte long");
-        require(msg.sender != address(0));
-        require(_stars>0,"At least 1 star");
-        require(_price>0,"Price cannot be 0");
-        _;
-    }      
-
-    //3. Minar Hashima
-    function mint(
-        address hashima_contract,
-        uint256 _stars,
-        string memory _uri,
-        string memory _nonce,
-        uint256 _price,
-        bool _forSale,
-        address _receiver
-        )external checkMintingData(_uri,_stars,_price) onlyOwner{
-
-        require(debt[_receiver],'user no pay');
-
-        // uint256 ID=
-        IHashima(hashima_contract).mintFor(
-            _stars, 
-            _uri,
-            _nonce, 
-            _price, 
-            _forSale, 
-            _receiver
-        );
-        // Hashima minted, now is false
-        debt[_receiver]=false;
-
-    }
-
-    receive() external payable {
-    }
-
-    function getPrice()external view returns(uint256){
-        return PRICE;
-    }
     // Generar solicitud de retiro
     function submitTransaction(
         address _to,
         uint _value
-        ) public onlyOwner {
+        ) public onlyAdmin {
 
         uint txIndex = transactions.length;
 
@@ -161,7 +104,7 @@ contract Multisig {
     }
 
     // Los socios llaman a la funcion para dar permiso a retirar los fondos
-    function confirmTransaction(uint _txIndex)public onlyOwner
+    function confirmTransaction(uint _txIndex)public onlyAdmin
         txExists(_txIndex)
         notExecuted(_txIndex)
         notConfirmed(_txIndex){
@@ -177,7 +120,7 @@ contract Multisig {
     // Si se tienen las confirmaciones necesarias, ejecutar transaccion
     function executeTransaction(uint _txIndex)
         public
-        onlyOwner
+        onlyAdmin
         txExists(_txIndex)
         notExecuted(_txIndex){
 
@@ -201,7 +144,7 @@ contract Multisig {
     // Socio retira su permiso de la transaccion
     function revokeConfirmation(uint _txIndex)
         public
-        onlyOwner
+        onlyAdmin
         txExists(_txIndex)
         notExecuted(_txIndex){
         Transaction storage transaction = transactions[_txIndex];

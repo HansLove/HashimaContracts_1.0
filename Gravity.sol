@@ -5,19 +5,21 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./IHashima.sol";
+import "./Multisig.sol";
 
 
 /**
 Liquid gravity smart contract by Aaron Tolentino
  */
-contract Gravity is Ownable,ReentrancyGuard{
+contract Gravity is Ownable,ReentrancyGuard,Multisig{
     // libreria contador
     using Counters for Counters.Counter;
 
     // Contador interno
     Counters.Counter private IDs;
 
-    constructor(){
+    constructor(address[] memory _owners, uint _numConfirmationsRequired)
+    Multisig(_owners,_numConfirmationsRequired){
         isMember[msg.sender]=true;
         isGenesis[msg.sender]=true;
         // BLOCK_TOLERANCE=block_tolerance;
@@ -25,7 +27,7 @@ contract Gravity is Ownable,ReentrancyGuard{
 
     uint256 SELL_TARGET=2;
     
-    uint256 MIN_PRICE=5*10**17 wei;
+    uint256 PRICE=5*10**17 wei;
 
     // ________________Genesis_______________________
     mapping(address=>bool) isGenesis;
@@ -98,14 +100,14 @@ contract Gravity is Ownable,ReentrancyGuard{
     }    
 
 
-    // init the Hashima protocol inside this smart contract
-    function init(address hashima_contrac)external onlyOwner returns(uint256){
-        (uint256 _blockNumber,uint256 _timing)=IHashima(hashima_contrac).init();
-        emit Start(_blockNumber,_timing);
-        return _blockNumber;
-
+    // 2. Multisig llama a init() del servidor
+    function init(address hashima_contract)external onlyOwner returns(uint256,uint256){
+        (uint256 _blockNumber,uint256 _timing)=IHashima(hashima_contract).init();
+        emit Init(_blockNumber,_timing);
+        return (_blockNumber,_timing);
     }
 
+    
     //Solo el administrador del contrato puede definir nuevos 'lideres'
     function createGenesis(address new_genesis)public onlyOwner{
         // address is not a member. Admin becomes the Reference
@@ -122,11 +124,11 @@ contract Gravity is Ownable,ReentrancyGuard{
 
     ///SETTERS
     function setPrice(uint256 _newPrice)external onlyOwner{
-        MIN_PRICE=_newPrice;
+        PRICE=_newPrice;
     }
 
     function getPrice()external view returns(uint256){
-        return MIN_PRICE;
+        return PRICE;
     }
 
     //cuando el servidor tenga listo el hashima lo deposita
