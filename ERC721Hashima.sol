@@ -3,28 +3,25 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-// import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "./IHashima.sol";
 
 /**
   Hashima Protocol
- * @dev ERC721 token with proof of work inyected in the structure.
- by: Aaron Tolentino*/
-  abstract contract ERC721Hashima is 
-  ERC721URIStorage
-  ,IHashima{
+  @dev ERC721 token with proof of work inyected in the structure.
+  by: Aaron Tolentino*/
+  abstract contract ERC721Hashima is ERC721URIStorage,IHashima{
 
   using Counters for Counters.Counter;
 
-  Counters.Counter internal _tokenIds;
+  Counters.Counter private _tokenIds;
 
   using Strings for uint256;
 
 
   // numero de bloque en la que se inicio el protocolo
-  mapping(address=>uint256) internal tolerance;
+  mapping(address=>uint256) internal randomizer;
 
   // timestamp al momento de arrancar el protocolo
   mapping(address=>uint256) internal timing;
@@ -37,7 +34,7 @@ import "./IHashima.sol";
     _;
   }
     /** 
-  1.Check tolerance is not 0. 
+  1.Check randomizer is not 0. 
   2.Tolerance plus BLOCK TOLERANCE has to be more than the current block
   3.The proof of work data has to be unique in this smart contract.
   4.Sender cannot be 0
@@ -45,7 +42,7 @@ import "./IHashima.sol";
   6.Price at least 1 wei
   */
   modifier checkMintingData(string memory _uri,uint256 _stars,uint256 _price){
-      require(tolerance[msg.sender]!=0);
+      require(randomizer[msg.sender]!=0);
       require(timing[msg.sender]!=0);
       require(timing[msg.sender]+600>block.timestamp,"Timing is expire");
       require(bytes(_uri).length >= 1, "Data must be at least 1 byte long");
@@ -58,12 +55,13 @@ import "./IHashima.sol";
   
   function init()public override returns(uint256,uint256){
         uint256 _timing=block.timestamp;
+
         uint256 _randomizer=uint256(keccak256(abi.encodePacked(
         block.timestamp, 
         block.coinbase,
         block.number)))%(_tokenIds.current()+100);
 
-        tolerance[msg.sender]=_randomizer;
+        randomizer[msg.sender]=_randomizer;
         timing[msg.sender]=_timing;
         // event for external listener
         emit InitProtocol(_randomizer,_timing);
@@ -95,7 +93,7 @@ import "./IHashima.sol";
       bytes32 _hashFinal=sha256(abi.encodePacked(
         _data,
         _nonce,
-        Strings.toString(tolerance[msg.sender]),
+        Strings.toString(randomizer[msg.sender]),
         Strings.toString(timing[msg.sender])
         ));
       
@@ -108,7 +106,14 @@ import "./IHashima.sol";
     _;
   }
 
-
+  /**Register the Hashima in the blockchain
+  @param _uri:metadata attach to the Hashima
+  @param _receiver:Who will get the Hashima
+  @param _stars:Number of stars(hash power)
+  @param _nonce:Proof of work unique number
+  @param _price:Price in wei
+  @param _forSale:Price in wei
+  */
   function register(
     string memory _uri,
     address _receiver,
@@ -135,7 +140,7 @@ import "./IHashima.sol";
           payable(_receiver),//current owner
           payable(address(0)),//previous owner(for staking)
           _stars,//number of 0 in the hash
-          tolerance[msg.sender],//block.number at Init()
+          randomizer[msg.sender],//block.number at Init()
           timing[msg.sender],//block.timestamp at Init()
           _nonce,//unique number for proof of work
           _price,
@@ -150,6 +155,7 @@ import "./IHashima.sol";
   }
 
 
+  /**Total amount of Hashimas*/
   function getTotal()public view override returns(uint256){
         return _tokenIds.current();
   }    
@@ -162,7 +168,7 @@ import "./IHashima.sol";
   
   //returns data needed for proof of work
   function check()public view override returns(uint256,uint256){
-        return (tolerance[msg.sender],timing[msg.sender]);
+        return (randomizer[msg.sender],timing[msg.sender]);
   }
 
 }

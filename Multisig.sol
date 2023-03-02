@@ -19,7 +19,6 @@ contract Multisig {
     mapping(address => bool) public isOwner;
     uint public numConfirmationsRequired;
 
-    mapping(address=>bool) debt;
 
     struct Transaction {
         address to;
@@ -80,7 +79,7 @@ contract Multisig {
     event Init(uint256, uint256);
 
 
-    // Generar solicitud de retiro
+    //1.  Generar solicitud de retiro
     function submitTransaction(
         address _to,
         uint _value
