@@ -65,11 +65,6 @@ contract Auction is ReentrancyGuard {
         //First transfer ownership to this contract
         //and then change the 'forSale' in case is on.
         hashima.transferFrom(msg.sender, address(this), tokenId);
-
-        // bool forSale=hashima.getHashima(tokenId).forSale;
-        // if(forSale){
-        //     hashima.toggleForSale(tokenId,0);
-        // }
         
     }
 

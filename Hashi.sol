@@ -27,7 +27,6 @@ contract Hashi is ERC20Burnable{
         require (msg.sender == ERC721Hashima(_contract).ownerOf(tokenId), 'Sender must be owner');
         require (!has_deposited[_contract][tokenId], 'Sender already deposited');
         
-
         //La altura del bloque de partida
         checkpoints[msg.sender][tokenId] = block.number;
         staking_accounts[tokenId]=msg.sender;

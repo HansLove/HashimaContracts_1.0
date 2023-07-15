@@ -48,12 +48,12 @@ contract Server is Ownable,ReentrancyGuard{
     event Start(uint256 tolerance,uint256 timing);
 
     /**@dev only the admin can  init the protocol*/
-    function Init(address hashima_contract)external isAdmin returns(uint256,uint256){
-        (uint256 _blockNumber,uint256 _timing)=IHashima(hashima_contract).init();
-        emit Start(_blockNumber,_timing);
-        return (_blockNumber,_timing);
+    // function Init(address hashima_contract)external isAdmin returns(uint256,uint256){
+    //     (uint256 _blockNumber,uint256 _timing)=IHashima(hashima_contract).init();
+    //     emit Start(_blockNumber,_timing);
+    //     return (_blockNumber,_timing);
 
-    }
+    // }
 
     event New(uint256 _id);
         
@@ -68,7 +68,7 @@ contract Server is Ownable,ReentrancyGuard{
     //cuando el servidor tenga listo el hashima lo deposita
     function mint(
         address hashima_contract,
-        uint256 _stars,
+        uint8 _stars,
         string memory _uri,
         string memory _nonce,
         uint256 _price,

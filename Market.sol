@@ -12,6 +12,13 @@ import "./ERC721Hashima.sol";
   
 abstract contract Market is ERC721Hashima{
 
+  modifier onlyHashimaOwner(uint256 _tokenId){
+      require(_exists(_tokenId));
+      address tokenOwner = ownerOf(_tokenId);
+      require(tokenOwner == msg.sender,'only the hashima owner');
+      _;
+  }
+
   // change the market state of the Hashima
   function toggleForSale(uint256 _tokenId)override public onlyHashimaOwner(_tokenId){
     require(msg.sender != address(0));

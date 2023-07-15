@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+// import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
@@ -11,7 +12,7 @@ import "./IHashima.sol";
   Hashima Protocol
   @dev ERC721 token with proof of work inyected in the structure.
   by: Aaron Tolentino*/
-  abstract contract ERC721Hashima is ERC721URIStorage,IHashima{
+  abstract contract ERC721HashimaO is ERC721URIStorage,IHashima{
 
   using Counters for Counters.Counter;
 
@@ -31,7 +32,6 @@ import "./IHashima.sol";
   function init() public override returns (uint256, uint256) {
     uint256 _timing = block.timestamp;
     // Generate a random seed using a combination of various factors.
-    // require(timing[user]!=0&&timing[user]+600>_timing);
     bytes32 seed = keccak256(
         abi.encodePacked(
             _tokenIds.current(),
@@ -45,11 +45,11 @@ import "./IHashima.sol";
     // Generate a random number within the desired range
     uint256 _randomizer = uint256(seed) % (_tokenIds.current() + 100);
 
-    randomizer[msg.sender] = _randomizer;
-    timing[msg.sender] = _timing;
+    // randomizer[msg.sender] = _randomizer;
+    // timing[msg.sender] = _timing;
 
-    // randomizer[tx.origin] = _randomizer;
-    // timing[tx.origin] = _timing;
+    randomizer[tx.origin] = _randomizer;
+    timing[tx.origin] = _timing;
 
     emit InitProtocol(_randomizer, _timing);
 
@@ -57,9 +57,7 @@ import "./IHashima.sol";
   }
 
 
-  function _beforeTokenTransfer(address from,address to,uint256 tokenId
-  ,uint256 batchSize
-  )internal virtual override{
+  function _beforeTokenTransfer(address from,address to,uint256 tokenId,uint256 batchSize)internal virtual override{
           require(batchSize>0);
           Hashi memory _hashima = DATA[tokenId];
           // update the token's previous owner
@@ -76,7 +74,7 @@ import "./IHashima.sol";
   /**
   Proof of work function inspired in Bitcoin by 
   Satoshi Nakamoto & Hashcash by Adam Back*/
-  modifier proofOfWork(string memory _data,string memory _nonce, uint256 _stars){
+  modifier proofOfWork(string memory _data,string memory _nonce, uint256 _stars,address _receiver){
       require(_stars>0&&_stars<=32,"At least 1 star");
 
       bool respuesta=true;
@@ -114,7 +112,7 @@ import "./IHashima.sol";
     uint256 _price,
     bool _forSale
     )internal 
-    proofOfWork(_uri,_nonce,_stars) returns(uint256){
+    proofOfWork(_uri,_nonce,_stars,_receiver) returns(uint256){
       
       _tokenIds.increment();
         // new Hashima ID
