@@ -71,6 +71,8 @@ contract Nakamoto is Market,Ownable{
         
     }    
 
+    event Minted(uint256);
+
     // mint a Hashima in behalf of other user
     function mintFor(
         uint8 _stars,
@@ -97,20 +99,21 @@ contract Nakamoto is Market,Ownable{
                 _forSale
                 );
         
+            emit Minted(_id);
             return _id;
 
     }
 
     // Metadatas
-    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-        require(_exists(tokenId), "URI query for nonexistent token");
-        return string(abi.encodePacked(baseURI,Strings.toString(tokenId),".json"));
+    // function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+    //     require(_exists(tokenId), "URI query for nonexistent token");
+    //     return string(abi.encodePacked(baseURI,Strings.toString(tokenId),".json"));
 
-    }
+    // }
 
-    // Ony owner can define a new API URL
-    function _setTokenURI(string memory new_uri)external onlyOwner{
-        baseURI=new_uri;
-    } 
+    // // Ony owner can define a new API URL
+    // function _setTokenURI(string memory new_uri)external onlyOwner{
+    //     baseURI=new_uri;
+    // } 
 
 }

@@ -136,7 +136,7 @@ import "./IHashima.sol";
       DATA[newItemId] = newHashima;
 
       _mint(_receiver, newItemId);
-      // _setTokenURI(newItemId, _uri);
+      _setTokenURI(newItemId, _uri);
       
       // Return ID
       return newItemId;
