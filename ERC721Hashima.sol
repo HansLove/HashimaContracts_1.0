@@ -69,75 +69,26 @@ abstract contract ERC721Hashima is ERC721, IHashima {
 
   /**
   Proof of work function inspired in Bitcoin by 
-  Satoshi Nakamoto & Hashcash by Adam Back*/
-  // modifier proofOfWork(string memory _data,string memory _nonce, uint256 _stars){
-  //     require(_stars>0&&_stars<=32,"At least 1 star");
-
-  //     bool respuesta=true;
-  //     // calculate sha256 of the inputs
-  //     //this hash must start with a number of 0's
-  //     bytes32 _hashFinal=sha256(abi.encodePacked(
-  //       _data,
-  //       _nonce,
-  //       Strings.toString(randomizer[msg.sender]),
-  //       Strings.toString(timing[msg.sender])
-  //       ));
-      
-  //     for (uint256 index = 0; index < _stars; index++) {
-  //       if (_hashFinal[index]!=0x00) {
-  //               respuesta=false;  
-  //           }
-  //     }
-  //     require(respuesta,'invalid proof of work');
-  //   _;
-  // }
-
-  //   modifier proofOfWork(string memory _data, string memory _nonce, uint256 _stars) {
-  //     require(_stars > 0 && _stars <= 32, "Invalid number of stars");
-  //     bytes32 hash = sha256(abi.encodePacked(_data, _nonce, Strings.toString(randomizer[msg.sender]), Strings.toString(timing[msg.sender])));
-  //     require(uint256(hash) < (2 ** (256 - _stars)), "Invalid proof of work"); // Difficulty: _stars leading zeroes
-  //     _;
-  // }
-
-
-  //     modifier checkMintingData(string memory _uri, uint256 _stars, uint256 _price) {
-  //       require(randomizer[msg.sender] != 0, "Not randomizer");
-  //       require(timing[msg.sender] != 0, "Not timing");
-  //       require(timing[msg.sender] + 600 > block.timestamp, "Timing is expired");
-  //       require(bytes(_uri).length >= 1, "Data must be at least 1 byte long");
-  //       require(msg.sender != address(0), "Invalid sender address");
-  //       require(_price > 0, "Price cannot be 0");
-  //       _;
-  //   }
-    /** 
+  Satoshi Nakamoto & Hashcash by Adam Back.
     1.Check randomizer is not 0. 
     2.Tolerance plus BLOCK TOLERANCE has to be more than the current block
     3.The proof of work data has to be unique in this smart contract.
     4.Sender cannot be 0
     5.Number of stars cannot be 0
-    6.Price at least 1 wei
-    */
+    6.Price at least 1 wei*/
     modifier checkWorkAndData(
         uint256 _stars,
         uint256 _price,
-        string memory _data,
-        string memory _nonce
-    ) {
-        // require(randomizer[msg.sender] != 0, "Not randomizer");
-        require(timing[msg.sender] != 0&&randomizer[msg.sender] != 0&&bytes(_data).length >= 1, "Not data");
+        string memory _nonce) {
+        // require(timing[msg.sender] != 0&&randomizer[msg.sender] != 0&&bytes(_data).length >= 1, "Not data");
+        require(timing[msg.sender] != 0&&randomizer[msg.sender] != 0, "Not data");
         require(timing[msg.sender] + 600 > block.timestamp, "Timing is expired");
         require(_price > 0, "Price cannot be 0");
-        // require(bytes(_data).length >= 1, "Data must be at least 1 byte long");
-        // require(msg.sender != address(0), "Invalid sender address");
-
-        // bytes32 hash = sha256(abi.encodePacked(_data, _nonce, Strings.toString(randomizer[msg.sender]), Strings.toString(timing[msg.sender])));
-        // bytes32 hash = sha256(abi.encodePacked(_data, _nonce, Strings.toString(randomizer[msg.sender]), Strings.toString(timing[msg.sender])));
-        // require(uint256(hash) < (2 ** (256 - _stars)), "Invalid proof of work"); // Difficulty: _stars leading zeroes
         bool respuesta=true;
         // calculate sha256 of the inputs
         //this hash must start with a number of 0's
         bytes32 _hashFinal=sha256(abi.encodePacked(
-          _data,
+          // _data,
           _nonce,
           Strings.toString(randomizer[msg.sender]),
           Strings.toString(timing[msg.sender])
@@ -154,7 +105,6 @@ abstract contract ERC721Hashima is ERC721, IHashima {
 
 
   /**Register the Hashima in the blockchain
-  @param _uri:metadata attach to the Hashima
   @param _receiver:Who will get the Hashima
   @param _stars:Number of stars(hash power)
   @param _nonce:Proof of work unique number
@@ -162,14 +112,13 @@ abstract contract ERC721Hashima is ERC721, IHashima {
   @param _forSale:Price in wei
   */
   function register(
-    string memory _uri,
     address _receiver,
     uint8 _stars,
     string memory _nonce,
     uint256 _price,
     bool _forSale
     )internal 
-    checkWorkAndData(_stars,_price,_uri,_nonce) 
+    checkWorkAndData(_stars,_price,_nonce) 
     returns(uint256){
       
       _tokenIds.increment();

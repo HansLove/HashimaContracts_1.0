@@ -15,10 +15,7 @@ contract Nakamoto is Market{
 
     uint256 immutable HARD_CAP=21000;
     
-    // string internal baseURI="https://hashima.xyz/";
-
     mapping(uint256 => string) private _tokenURIs;
-
 
     constructor() ERC721("Nakamoto", "NAKAMOTOS") {}
       
@@ -47,7 +44,6 @@ contract Nakamoto is Market{
         require(HARD_CAP>getTotal(),'hard cap reached');
 
         _id=register(
-            _uri,
             msg.sender,
             _stars,
             _nonce,
@@ -61,7 +57,6 @@ contract Nakamoto is Market{
         return _id;
         
     }    
-
 
     // mint a Hashima in behalf of other user
     function mintFor(
@@ -80,7 +75,6 @@ contract Nakamoto is Market{
             require(HARD_CAP>getTotal(),'hard cap reached');
     
             _id=register(
-                _uri,
                 _receiver,
                 _stars,
                 _nonce,
@@ -96,25 +90,19 @@ contract Nakamoto is Market{
 
     }
 
-    // Metadatas
+    // Define metadata provider of the Hashima
+    function setTokenURI(uint256 tokenId,string memory _uri) public{
+        require(_exists(tokenId), "URI query for nonexistent token");
+        require(ownerOf(tokenId)==msg.sender);
+        _tokenURIs[tokenId] = _uri;
+
+
+    }
+    // Metadata of the Hashima
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         require(_exists(tokenId), "URI query for nonexistent token");
-        // return string(abi.encodePacked(baseURI,Strings.toString(tokenId),".json"));
-
         string memory _tokenURI = _tokenURIs[tokenId];
         return _tokenURI;
 
     }
-
-    // Ony owner can define a new API URL
-    // function _setTokenURI(string memory new_uri)external onlyOwner{
-    //     baseURI=new_uri;
-    // } 
-
-
-    // function _baseURI() internal view override returns (string memory) {
-    //     return baseURI;
-    // }
-
-
 }

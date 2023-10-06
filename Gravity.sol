@@ -44,7 +44,7 @@ contract Gravity is Ownable, ReentrancyGuard, Multisig {
 
     function pay(address _ID) external payable {
         uint256 _value = msg.value;
-        require(_value == PRICE, "Incorrect price");
+        require(_value >= PRICE, "Incorrect price");
         require(isMember[_ID]||hashimaContract.balanceOf(_ID)>0, "Referal has to be a member");
 
         if (!isMember[msg.sender]) {
